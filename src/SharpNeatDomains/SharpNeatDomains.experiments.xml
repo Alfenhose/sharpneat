@@ -537,5 +537,30 @@ A single evaluation consists of 75 test cases with the two boxes randomly positi
 The problem domain view allows the performance of the best genome to be observed. The view also allows the HyperNEAT genome to be decoded using a range of visual field pixel resolutions beyond the 11x11 resolution that genomes are trained with. The ability to do this is a feature of HyperNEAT - the evolved genomes are Compositional Pattern Producing Networks (CPPNs). A CPPN defines the connection strength between nodes positioned in some euclidean space and therefore we can use a CPPN to produce neural networks with more nodes by increasing the number and density of nodes.
       </Description>
     </Config>
-  </Experiment>  
+  </Experiment>
+
+  <Experiment name="Spelunky">
+    <AssemblyPath>SharpNeatDomains.dll</AssemblyPath>
+    <ClassName>SharpNeat.Domains.Spelunky.SpelunkyExperiment</ClassName>
+    <Config>
+      <PopulationSize>150</PopulationSize>
+      <SpecieCount>10</SpecieCount>
+     <Activation>
+        <Scheme>CyclicFixedIters</Scheme>
+        <Iters>3</Iters>
+      </Activation>
+      <ComplexityRegulationStrategy>Relative</ComplexityRegulationStrategy>
+      <ComplexityThreshold>10</ComplexityThreshold>
+      <TrialsPerEvaluation>100</TrialsPerEvaluation>
+      <GridWidth>40</GridWidth>
+      <GridHeight>32</GridHeight>
+      <InitPercentage>0.6</InitPercentage>
+      <Steps>5</Steps>
+      <Description>
+        Spelunky 
+      </Description>
+    </Config>
+  </Experiment>
+
+
 </Experiments>

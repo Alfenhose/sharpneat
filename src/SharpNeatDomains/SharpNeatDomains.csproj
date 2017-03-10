@@ -121,6 +121,15 @@
       <DependentUpon>NeatGenomeView.cs</DependentUpon>
     </Compile>
     <Compile Include="PolarPoint.cs" />
+    <Compile Include="Spelunky\SpelunkyEvaluator.cs" />
+    <Compile Include="Spelunky\SpelunkyExperiment.cs" />
+    <Compile Include="Spelunky\SpelunkyView.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Spelunky\SpelunkyView.Designer.cs">
+      <DependentUpon>SpelunkyView.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Spelunky\SpelunkyGenerator.cs" />
     <Compile Include="PreyCapture\PreyCaptureView.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -160,6 +169,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="NeatGenomeView.resx">
       <DependentUpon>NeatGenomeView.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Spelunky\SpelunkyView.resx">
+      <DependentUpon>SpelunkyView.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="PreyCapture\PreyCaptureView.resx">
       <DependentUpon>PreyCaptureView.cs</DependentUpon>
