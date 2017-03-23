@@ -4,7 +4,7 @@ using System.Xml;
 using log4net.Config;
 using SharpNeat.Domains;
 using SharpNeat.Domains.BinaryElevenMultiplexer;
-using SharpNeat.DomainsExtra.InvertedDoublePendulum;
+using SharpNeat.Domains.GenerativeFunctionRegression;
 
 namespace EfficacySampler
 {
@@ -44,10 +44,8 @@ namespace EfficacySampler
             {
                 for(;;)
                 {
-                    double secs;
-                    int gens;
-                    double fitness = eaHost.Sample(out secs, out gens);
-                    __streamWriter.WriteLine($"{secs},{gens},{fitness}");
+                    Sample s = eaHost.Sample();
+                    __streamWriter.WriteLine($"{s.ElapsedTimeSecs},{s.GenerationCount},{s.BestFitness:0.#####},{s.MeanFitness:0.#####},{s.MaxComplexity:0.#####},{s.MeanComplexity:0.#####},{s.EvaluationCount}");
                     __streamWriter.Flush();
                 }
             }
@@ -72,7 +70,7 @@ namespace EfficacySampler
             
             // Create new file and write a header row.
             StreamWriter sw = new StreamWriter(filename);
-            sw.WriteLine("secs,gens,bestfitness");
+            sw.WriteLine("secs,gens,bestfitness,meanfitness,maxcomplexity,meancomplexity,evalcount");
             return sw;
         }
 
@@ -82,8 +80,8 @@ namespace EfficacySampler
             {
                 case "binary11":
                     return InitExperiment_BinaryElevenMultiplexer();
-                case "inverted":
-                    return InitExperiment_InvertedDoublePendulum();
+                case "sinewave":
+                    return InitExperiment_Sinwave();
             }
 
             Console.WriteLine($"Unrecognised experiment [{experimentId}]");
@@ -93,23 +91,23 @@ namespace EfficacySampler
         private static IGuiNeatExperiment InitExperiment_BinaryElevenMultiplexer()
         {
             // Experiment classes encapsulate much of the nuts and bolts of setting up a NEAT search.
-            BinaryElevenMultiplexerExperiment experiment = new BinaryElevenMultiplexerExperiment();
+            var experiment = new BinaryElevenMultiplexerExperiment();
 
             // Load config XML.
             XmlDocument xmlConfig = new XmlDocument();
-            xmlConfig.Load("config/binaryElevenMultiplexer.config.xml");
+            xmlConfig.Load("config/binary-eleven-multiplexer.config.xml");
             experiment.Initialize(experiment.Name, xmlConfig.DocumentElement);
             return experiment;
         }
 
-        private static IGuiNeatExperiment InitExperiment_InvertedDoublePendulum()
+        private static IGuiNeatExperiment InitExperiment_Sinwave()
         {
             // Experiment classes encapsulate much of the nuts and bolts of setting up a NEAT search.
-            InvertedDoublePendulumExperiment experiment = new InvertedDoublePendulumExperiment();
+            var experiment = new GenerativeFnRegressionExperiment();
 
             // Load config XML.
             XmlDocument xmlConfig = new XmlDocument();
-            xmlConfig.Load("config/invertedDoublePendulum.config.xml");
+            xmlConfig.Load("config/generative-sinewave.config.xml");
             experiment.Initialize(experiment.Name, xmlConfig.DocumentElement);
             return experiment;
         }

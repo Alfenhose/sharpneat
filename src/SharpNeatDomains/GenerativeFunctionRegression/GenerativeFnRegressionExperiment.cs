@@ -18,18 +18,19 @@ using SharpNeat.Core;
 using SharpNeat.Decoders;
 using SharpNeat.Decoders.Neat;
 using SharpNeat.DistanceMetrics;
+using SharpNeat.Domains.FunctionRegression;
 using SharpNeat.EvolutionAlgorithms;
 using SharpNeat.EvolutionAlgorithms.ComplexityRegulation;
 using SharpNeat.Genomes.Neat;
 using SharpNeat.Phenomes;
 using SharpNeat.SpeciationStrategies;
 
-namespace SharpNeat.Domains.FunctionRegression
+namespace SharpNeat.Domains.GenerativeFunctionRegression
 {
     /// <summary>
-    /// Function regression task.
+    /// Generative function regression task.
     /// </summary>
-    public class FunctionRegressionExperiment : IGuiNeatExperiment
+    public class GenerativeFnRegressionExperiment : IGuiNeatExperiment
     {
         private static readonly ILog __log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -43,15 +44,15 @@ namespace SharpNeat.Domains.FunctionRegression
         int? _complexityThreshold;
         string _description;
         ParallelOptions _parallelOptions;
-        IFunction _func;
-        ParameterSamplingInfo[] _paramSamplingInfoArr;
+        IFunction _fn;
+        ParamSamplingInfo _paramSamplingInfo;
         
         #region Constructor
 
         /// <summary>
         /// Default constructor.
         /// </summary>
-        public FunctionRegressionExperiment()
+        public GenerativeFnRegressionExperiment()
         {
         }
 
@@ -80,7 +81,7 @@ namespace SharpNeat.Domains.FunctionRegression
         /// </summary>
         public int InputCount
         {
-            get { return _func.InputCount; }
+            get { return 1; }
         }
 
         /// <summary>
@@ -134,24 +135,20 @@ namespace SharpNeat.Domains.FunctionRegression
 
             _eaParams = new NeatEvolutionAlgorithmParameters();
             _eaParams.SpecieCount = _specieCount;
+
             _neatGenomeParams = new NeatGenomeParameters();
             _neatGenomeParams.FeedforwardOnly = _activationScheme.AcyclicNetwork;
 
             // Determine what function to regress.
             string fnIdStr = XmlUtils.GetValueAsString(xmlConfig, "Function");
             FunctionId fnId = (FunctionId)Enum.Parse(typeof(FunctionId), fnIdStr);
-            _func = FunctionRegressionEvaluator.GetFunction(fnId);
+            _fn = FunctionUtils.GetFunction(fnId);
 
             // Read parameter sampling scheme settings.
             int sampleResolution = XmlUtils.GetValueAsInt(xmlConfig, "SampleResolution");
             double sampleMin = XmlUtils.GetValueAsDouble(xmlConfig, "SampleMin");
             double sampleMax = XmlUtils.GetValueAsDouble(xmlConfig, "SampleMax");
-
-            int paramCount = _func.InputCount;
-            _paramSamplingInfoArr = new ParameterSamplingInfo[paramCount];
-            for(int i=0; i<paramCount; i++) {
-                _paramSamplingInfoArr[i] = new ParameterSamplingInfo(sampleMin, sampleMax, sampleResolution);
-            }
+            _paramSamplingInfo = new ParamSamplingInfo(sampleMin, sampleMax, sampleResolution);
         }
 
         /// <summary>
@@ -187,7 +184,7 @@ namespace SharpNeat.Domains.FunctionRegression
         /// </summary>
         public IGenomeFactory<NeatGenome> CreateGenomeFactory()
         {
-            return new NeatGenomeFactory(InputCount, OutputCount, _neatGenomeParams);
+            return new NeatGenomeFactory(0, OutputCount, _neatGenomeParams);
         }
 
         /// <summary>
@@ -236,7 +233,7 @@ namespace SharpNeat.Domains.FunctionRegression
             NeatEvolutionAlgorithm<NeatGenome> ea = new NeatEvolutionAlgorithm<NeatGenome>(_eaParams, speciationStrategy, complexityRegulationStrategy);
 
             // Create IBlackBox evaluator.
-            FunctionRegressionEvaluator evaluator = new FunctionRegressionEvaluator(_paramSamplingInfoArr, _func);
+            var evaluator = new GenerativeFnRegressionEvaluator(_fn, _paramSamplingInfo, 0.9);
 
             // Create genome decoder.
             IGenomeDecoder<NeatGenome,IBlackBox> genomeDecoder = CreateGenomeDecoder();
@@ -269,10 +266,10 @@ namespace SharpNeat.Domains.FunctionRegression
         /// </summary>
         public AbstractDomainView CreateDomainView()
         {
-            if(1 == InputCount)
+            if (1 == InputCount)
             {
-                ParameterSamplingInfo paramInfo = _paramSamplingInfoArr[0];
-                return new FunctionRegressionView2D(_func, paramInfo._min, paramInfo._incr, paramInfo._sampleCount, CreateGenomeDecoder());
+                ParamSamplingInfo paramInfo = _paramSamplingInfo;
+                return new FnRegressionView2D(_fn, paramInfo, true, CreateGenomeDecoder());
             }
 
             return null;
