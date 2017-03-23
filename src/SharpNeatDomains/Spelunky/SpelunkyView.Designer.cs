@@ -52,13 +52,13 @@
             this.pbx.TabStop = false;
             this.pbx.SizeChanged += new System.EventHandler(this.pbx_SizeChanged);
             // 
-            // PreyCaptureView
+            // SpelunkyView
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.pbx);
             this.Controls.Add(this.graphControl1);
-            this.Name = "PreyCaptureView";
+            this.Name = "SpelunkyView";
             this.Size = new System.Drawing.Size(462, 216);
             ((System.ComponentModel.ISupportInitialize)(this.pbx)).EndInit();
             this.ResumeLayout(false);

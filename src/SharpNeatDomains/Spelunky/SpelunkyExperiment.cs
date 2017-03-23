@@ -42,11 +42,11 @@ namespace SharpNeat.Domains.Spelunky
         int? _complexityThreshold;
 
         int _trialsPerEvaluation;
-		int _gridSize;      // Minimum of 9 (-> 9x9 grid). 24 is a good value here.
-		int _preyInitMoves; // Number of initial moves (0 to 4).
-		double _preySpeed;	// 0 to 1.
-		double _sensorRange;// Agent's sensor range.
-        int _maxTimesteps;	// Length of time agent can survive w/out eating prey.
+        int _mooreSize;
+        int _gridWidth;      // Minimum of 9 (-> 9x9 grid). 24 is a good value here.
+        int _gridHeight;      // Minimum of 9 (-> 9x9 grid). 24 is a good value here.
+		double _initPercentage;	// 0 to 1.
+        int _steps;	// Length of time agent can survive w/out eating prey.
         string _description;
         ParallelOptions _parallelOptions;
 
@@ -84,7 +84,7 @@ namespace SharpNeat.Domains.Spelunky
         /// </summary>
         public int InputCount
         {
-            get { return 25; }
+            get { return (_mooreSize*2+1)* (_mooreSize * 2 + 1); }
         }
 
         /// <summary>
@@ -135,11 +135,11 @@ namespace SharpNeat.Domains.Spelunky
             _complexityThreshold = XmlUtils.TryGetValueAsInt(xmlConfig, "ComplexityThreshold");
 
             _trialsPerEvaluation = XmlUtils.GetValueAsInt(xmlConfig, "TrialsPerEvaluation");
-            _gridSize = XmlUtils.GetValueAsInt(xmlConfig, "GridSize");
-            _preyInitMoves = XmlUtils.GetValueAsInt(xmlConfig, "PreyInitMoves");
-            _preySpeed = XmlUtils.GetValueAsDouble(xmlConfig, "PreySpeed");
-            _sensorRange = XmlUtils.GetValueAsDouble(xmlConfig, "SensorRange");
-            _maxTimesteps = XmlUtils.GetValueAsInt(xmlConfig, "MaxTimesteps");
+            _gridWidth = XmlUtils.GetValueAsInt(xmlConfig, "GridWidth");
+            _gridHeight = XmlUtils.GetValueAsInt(xmlConfig, "GridHeight");
+            _initPercentage = XmlUtils.GetValueAsDouble(xmlConfig, "InitPercentage");
+            _mooreSize = XmlUtils.GetValueAsInt(xmlConfig, "MooreSize");
+            _steps = XmlUtils.GetValueAsInt(xmlConfig, "Steps");
             _description = XmlUtils.TryGetValueAsString(xmlConfig, "Description");
             _parallelOptions = ExperimentUtils.ReadParallelOptions(xmlConfig);
 
@@ -230,7 +230,7 @@ namespace SharpNeat.Domains.Spelunky
             NeatEvolutionAlgorithm<NeatGenome> ea = new NeatEvolutionAlgorithm<NeatGenome>(_eaParams, speciationStrategy, complexityRegulationStrategy);
 
             // Create IBlackBox evaluator.
-            PreyCaptureEvaluator evaluator = new PreyCaptureEvaluator(_trialsPerEvaluation, _gridSize, _preyInitMoves, _preySpeed, _sensorRange, _maxTimesteps);
+            SpelunkyEvaluator evaluator = new SpelunkyEvaluator(_trialsPerEvaluation, _gridWidth, _gridHeight, _initPercentage, _mooreSize, _steps);
 
             // Create genome decoder.
             IGenomeDecoder<NeatGenome, IBlackBox> genomeDecoder = CreateGenomeDecoder();
@@ -259,8 +259,8 @@ namespace SharpNeat.Domains.Spelunky
         /// </summary>
         public AbstractDomainView CreateDomainView()
         {
-            return new PreyCaptureView(new NeatGenomeDecoder(_activationScheme),
-                                       new PreyCaptureWorld(_gridSize, _preyInitMoves, _preySpeed, _sensorRange, _maxTimesteps));
+            return new SpelunkyView(new NeatGenomeDecoder(_activationScheme),
+                                       new SpelunkyGenerator(_gridWidth, _gridHeight, _initPercentage, _mooreSize, _steps));
         }
 
         #endregion

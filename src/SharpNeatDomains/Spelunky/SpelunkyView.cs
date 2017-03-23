@@ -32,9 +32,9 @@ namespace SharpNeat.Domains.Spelunky
         const int GridLeft = 2;
         const PixelFormat ViewportPixelFormat = PixelFormat.Format16bppRgb565;
         static readonly Pen __penGrey = new Pen(Color.LightGray, 1F);
-        readonly Brush _brushBackground = new SolidBrush(Color.Black);
-        readonly Brush _brushWall = new SolidBrush(Color.SaddleBrown);
-        readonly Brush _brushAir = new SolidBrush(Color.BurlyWood);
+        readonly Brush _brushBackground = new SolidBrush(Color.Gray);
+        readonly Brush _brushWall = new SolidBrush(Color.Chocolate);
+        readonly Brush _brushAir = new SolidBrush(Color.Black);//good browns: SaddleBrown, Chocolate
         readonly Brush _brushStart = new SolidBrush(Color.Blue);
         readonly Brush _brushEnd = new SolidBrush(Color.Red);
 
@@ -152,28 +152,26 @@ namespace SharpNeat.Domains.Spelunky
             // operation and thus thread safe.
             IBlackBox agent = _agent;
 
-            // Init world state.
-            _world.InitPositions();
+            // world.
+            _world.GenerateWorld(agent);
+
+            // Repaint view on GUI thread.
+            Invoke(new MethodInvoker(delegate ()
+            {
+                PaintView();
+            }));
+
+            Thread.Sleep(1000);
 
             // Clear any prior agent state.
             agent.ResetState();
 
             // Let the chase begin!
             bool exit = false;
-            for(; t < _world.Steps; t++)
+            for(int t = 0; t < _world.Steps; t++)
             {
-                _world.SetAgentInputsAndActivate(agent);
-                _world.MoveAgent(agent);
-                if(_world.IsPreyCaptured()) {
-                    exit = true;
-                }
+                _world.ShapeTheWorld(agent);
 
-                _world.MovePrey();
-                if(_world.IsPreyCaptured()) 
-                {   // The prey walked directly into the agent.
-                    exit = true;
-                }                
-    
                 // Repaint view on GUI thread.
                 Invoke(new MethodInvoker(delegate() 
                     {
@@ -181,11 +179,12 @@ namespace SharpNeat.Domains.Spelunky
                     }));
 
                 // Sleep. Even if the sim is about to exit - that way we see the end result for a moment.
-                Thread.Sleep(80);
+                Thread.Sleep(200);
                 if(exit) {
                     break;
                 }
             }
+            Thread.Sleep(1000);
         }
 
         private void PaintView()
@@ -203,49 +202,51 @@ namespace SharpNeat.Domains.Spelunky
             int height = Height;
 
             // Determine smallest dimension. Use that as the edge length of the square grid.
-            width = height = Math.Min(width, height);
+            //width = height = Math.Min(width, height);
+            int gridSize = Math.Min(height / _world.GridHeight, width / _world.GridWidth);
 
             // Pixel size is calculated using integer division to produce cleaner lines when drawing.
             // The inherent rounding down may produce a grid 1 pixel smaller then the determined edge length.
             // Also make room for a button above the grid (next test case button).
-            int visualFieldPixelSize = (height-GridTop) / _world.GridSize;
-            width = height = visualFieldPixelSize * _world.GridSize;
+            int visualFieldPixelSize = Math.Min((height-GridTop)/_world.GridHeight,gridSize);
+            width = visualFieldPixelSize * _world.GridWidth;
+            height = visualFieldPixelSize * _world.GridHeight;
 
             // Paint pixel outline grid.
             // Vertical lines.
             int xg = GridLeft;
-            for(int i=0; i<=_world.GridSize; i++, xg += visualFieldPixelSize) {
+            for(int i=0; i<=_world.GridWidth; i++, xg += visualFieldPixelSize) {
                 g.DrawLine(__penGrey, xg, GridTop, xg, GridTop+height);
             }
 
             // Horizontal lines.
             int yg = GridTop;
-            for(int i=0; i<=_world.GridSize; i++, yg += visualFieldPixelSize) {
+            for(int i=0; i<=_world.GridHeight; i++, yg += visualFieldPixelSize) {
                 g.DrawLine(__penGrey, GridLeft, yg, GridLeft+width, yg);
             }
 
             // Paint grid squares. Background color.
-            Brush sensorBrush = _world.IsPreyCaptured() ? _brushBackgroundSensorCaptured : _brushBackgroundSensor;
+            Brush sensorBrush = _brushBackground;
 
             yg = GridTop;
-            for(int y=0; y<_world.GridSize; y++, yg += visualFieldPixelSize)
+            for(int y=0; y<_world.GridHeight; y++, yg += visualFieldPixelSize)
             {
                 xg = GridLeft;
-                for(int x=0; x<_world.GridSize; x++, xg += visualFieldPixelSize)
+                for(int x=0; x<_world.GridWidth; x++, xg += visualFieldPixelSize)
                 {
                     // Calc distance of square from agent.
-                    if(IntPoint.CalculateDistance(_world.AgentPosition, x, y) <= _world.SensorRange) {
-                        g.FillRectangle(sensorBrush, xg+1, yg+1, visualFieldPixelSize-2, visualFieldPixelSize-2);
+                    switch (_world.GetWorldPoint(x, y))
+                    {
+                        case 0:
+                            g.FillRectangle(_brushAir, xg + 1, yg + 1, visualFieldPixelSize - 2, visualFieldPixelSize - 2);
+                            break;
+                        case 1:
+                            g.FillRectangle(_brushWall, xg + 1, yg + 1, visualFieldPixelSize - 2, visualFieldPixelSize - 2);
+                            break;
                     }
+                    
                 }
             }
-
-            // Paint agent and prey squares.
-            IntPoint a = _world.AgentPosition;
-            IntPoint p = _world.PreyPosition;
-            g.FillRectangle(_brushAgent, GridLeft+(a._x * visualFieldPixelSize)+1, GridTop+(a._y * visualFieldPixelSize)+1, visualFieldPixelSize-2, visualFieldPixelSize-2);
-            g.FillRectangle(_brushPrey, GridLeft+(p._x * visualFieldPixelSize)+1, GridTop+(p._y * visualFieldPixelSize)+1, visualFieldPixelSize-2, visualFieldPixelSize-2);
-
             Refresh();
         }
 
