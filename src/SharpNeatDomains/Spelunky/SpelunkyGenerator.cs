@@ -45,7 +45,18 @@ namespace SharpNeat.Domains.Spelunky
         //for the evaluator
         double percentage = -1;
         int[,] _integralWorld;
+
+        bool stats = false;
+        int _nooks;
+        int _ends;
+        int _solids;
+        int _empties;
         int _loners;
+        int _holes;
+        int _pits;
+        int _tunnels;
+        int _spires;
+        int _platforms;
 
         // Random number generator.
         Random _rng;
@@ -61,7 +72,7 @@ namespace SharpNeat.Domains.Spelunky
         {
             _gridWidth = gridWidth;
             _gridHeight = gridHeight;
-            _initPercentage = initPercentage;
+            _initPercentage = initPercentage/100.0;
             _mooreSize = mooreSize;
             _steps = steps;
             _rng = new Random();
@@ -133,18 +144,143 @@ namespace SharpNeat.Domains.Spelunky
             private set { _integralWorld = value; }
         }
         /// <summary>
-        /// Counts Loners.
+        /// Returns the number of Loners (single walls surrounded by air).
         /// </summary>
         public int Loners
         {
             get
             {
-                if (_loners >= 0)
+                if (!stats)
                 {
-                    return _loners;
+                    CalcStats(World);
                 }
-                _loners = CalcLoners(World);
                 return _loners;
+            }
+        }
+        /// <summary>
+        /// Returns the number of Holes (single empty spaces surrounded by walls).
+        /// </summary>
+        public int Holes
+        {
+            get
+            {
+                if (!stats)
+                {
+                    CalcStats(World);
+                }
+                return _holes;
+            }
+        }
+        /// <summary>
+        /// Returns the number of Solids (walls surrounded completely by walls).
+        /// </summary>
+        public int Solids
+        {
+            get
+            {
+                if (!stats)
+                {
+                    CalcStats(World);
+                }
+                return _solids;
+            }
+        }
+        /// <summary>
+        /// Returns the number of Empties (empty spaces surrounded completely by empty space).
+        /// </summary>
+        public int Empties
+        {
+            get
+            {
+                if (!stats)
+                {
+                    CalcStats(World);
+                }
+                return _empties;
+            }
+        }
+        /// <summary>
+        /// Returns the number of Nooks (empty spaces surrounded on three sides by walls).
+        /// </summary>
+        public int Nooks
+        {
+            get
+            {
+                if (!stats)
+                {
+                    CalcStats(World);
+                }
+                return _nooks;
+            }
+        }
+        /// <summary>
+        /// Returns the number of Ends (walls connected to a single wall).
+        /// </summary>
+        public int Ends
+        {
+            get
+            {
+                if (!stats)
+                {
+                    CalcStats(World);
+                }
+                return _ends;
+            }
+        }
+        /// <summary>
+        /// Returns the number of Pits (empty space with wall on the left and right).
+        /// </summary>
+        public int Pits
+        {
+            get
+            {
+                if (!stats)
+                {
+                    CalcStats(World);
+                }
+                return _pits;
+            }
+        }
+        /// <summary>
+        /// Returns the number of Tunnels (empty space with wall on top and on bottom).
+        /// </summary>
+        public int Tunnels
+        {
+            get
+            {
+                if (!stats)
+                {
+                    CalcStats(World);
+                }
+                return _ends;
+            }
+        }
+        /// <summary>
+        /// Returns the number of Platforms (wall with wall on the left and right).
+        /// </summary>
+        public int Platforms
+        {
+            get
+            {
+                if (!stats)
+                {
+                    CalcStats(World);
+                }
+                return _pits;
+            }
+        }
+        /// <summary>
+        /// Returns the number of Spires (wall with wall on top and on bottom).
+        /// </summary>
+        public int Spires
+        {
+            get
+            {
+                if (!stats)
+                {
+                    CalcStats(World);
+                }
+                return _ends;
             }
         }
         /// <summary>
@@ -171,7 +307,7 @@ namespace SharpNeat.Domains.Spelunky
         /// <summary>
         /// Generates the world
         /// </summary>
-        public void GenerateWorld(IBlackBox agent)
+        public void GenerateWorld()
         {
             // Init world state.
             Reset();
@@ -224,33 +360,92 @@ namespace SharpNeat.Domains.Spelunky
         /// <summary>
         /// counts loners of world
         /// </summary>
-        public int CalcLoners(int[,] world)
+        public void CalcStats(int[,] world)
         {
-            int loners = 0;
+
             for (int x = 0; x < GridWidth; x++)
             {
                 for (int y = 0; y < GridHeight; y++)
                 {
                     int temp = 0;
-                    if (GetWorldPoint(x,y) == 1)
+                    // four bit value NSEW, north south east west
+                    // first bit is North
+                    // second is south
+                    // third is east
+                    // fourth is west
+                    temp += 1 * GetWorldPoint(x, y - 1);
+                    temp += 2 * GetWorldPoint(x, y + 1);
+                    temp += 4 * GetWorldPoint(x - 1, y);
+                    temp += 8 * GetWorldPoint(x + 1, y);
+                    
+                    // when looking at wall
+                    if (GetWorldPoint(x,y) == 1) 
                     {
-                        temp += GetWorldPoint(x - 1, y);
-                        temp += GetWorldPoint(x + 1, y);
-                        temp += GetWorldPoint(x, y - 1);
-                        temp += GetWorldPoint(x, y + 1);
-                        if (temp == 0) loners++;
+                        switch (temp){
+                            case 0:
+                                _loners++;
+                                break;
+                            case 1:
+                                _ends++;
+                                break;
+                            case 2:
+                                _ends++;
+                                break;
+                            case 3:
+                                _platforms++;
+                                break;
+                            case 4:
+                                _ends++;
+                                break;
+                            case 8:
+                                _ends++;
+                                break;
+                            case 12:
+                                _spires++;
+                                break;
+                            case 15:
+                                _solids++;
+                                break;
+                            default:
+                                break;
+                        }
                     }
-                    if (GetWorldPoint(x, y) == 0)
+                    
+                    // when looking at empty space
+                    if (GetWorldPoint(x, y) == 0) 
                     {
-                        temp += GetWorldPoint(x - 1, y);
-                        temp += GetWorldPoint(x + 1, y);
-                        temp += GetWorldPoint(x, y - 1);
-                        temp += GetWorldPoint(x, y + 1);
-                        if (temp == 4) loners++;
+                        switch (temp)
+                        {
+                            case 0:
+                                _empties++;
+                                break;
+                            case 3:
+                                _pits++;
+                                break;
+                            case 7:
+                                _nooks++;
+                                break;
+                            case 11:
+                                _nooks++;
+                                break;
+                            case 12:
+                                _tunnels++;
+                                break;
+                            case 13:
+                                _nooks++;
+                                break;
+                            case 14:
+                                _nooks++;
+                                break;
+                            case 15:
+                                _holes++;
+                                break;
+                            default:
+                                break;
+                        }
                     }
                 }
             }
-            return loners;
         }
 
         /// <summary>

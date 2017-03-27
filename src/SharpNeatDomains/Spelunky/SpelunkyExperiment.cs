@@ -84,7 +84,7 @@ namespace SharpNeat.Domains.Spelunky
         /// </summary>
         public int InputCount
         {
-            get { return (_mooreSize*2+1)* (_mooreSize * 2 + 1); }
+            get { return (_mooreSize*2 + 1)* (_mooreSize * 2 + 1); }
         }
 
         /// <summary>

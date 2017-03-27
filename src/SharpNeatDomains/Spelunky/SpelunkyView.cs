@@ -153,7 +153,7 @@ namespace SharpNeat.Domains.Spelunky
             IBlackBox agent = _agent;
 
             // world.
-            _world.GenerateWorld(agent);
+            _world.GenerateWorld();
 
             // Repaint view on GUI thread.
             Invoke(new MethodInvoker(delegate ()

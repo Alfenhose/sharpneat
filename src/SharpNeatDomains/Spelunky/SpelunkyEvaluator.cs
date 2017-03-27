@@ -29,8 +29,6 @@ namespace SharpNeat.Domains.Spelunky
         readonly int _mooreSize;
         readonly int _steps;            // how many steps should the generator perform bafore showing the result
 
-        readonly double _targetPercentage = 0.30;
-
         ulong _evalCount;
         bool _stopConditionSatisfied;
 
@@ -44,7 +42,7 @@ namespace SharpNeat.Domains.Spelunky
             _trialsPerEvaluation = trialsPerEvaluation;
             _gridWidth = gridWidth;
             _gridHeight = gridHeight;
-            _initPercentage = initPercentage;
+            _initPercentage = initPercentage/100.0;
             _mooreSize = mooreSize;
             _steps = steps;
         }
@@ -83,7 +81,7 @@ namespace SharpNeat.Domains.Spelunky
             double fitness = 0;
             for (int i = 0; i < _trialsPerEvaluation; i++)
             {
-                generator.GenerateWorld(box);
+                generator.GenerateWorld();
                 // Run trials.
                 for (int t = 0; t < _steps; t++)
                 {
@@ -92,8 +90,8 @@ namespace SharpNeat.Domains.Spelunky
 
                 //total average
                 {
-                    double target = 0.25;
-                    double weight = 2;
+                    double target = 0.30;
+                    double weight = 4;
                     fitness += weight * ProximityToTarget(target, generator.Percentage);
                 }
 
@@ -148,11 +146,10 @@ namespace SharpNeat.Domains.Spelunky
                                      - generator.IntegralWorld[_gridWidth - columns - 1, _gridHeight - 1]) / (double)(_gridHeight * columns);
                     fitness += weight * SqrProximityToTarget(density1, density2);
                 }
-
                 //loners
                 {
                     double target = 0;
-                    double weight = 5;
+                    double weight = 8;
                     double loners = Math.Min(generator.Loners / 100.0, 1);
                     fitness += weight * SqrProximityToTarget(target, loners);
                 }
