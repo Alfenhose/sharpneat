@@ -10,6 +10,7 @@
  * along with SharpNEAT; if not, see https://opensource.org/licenses/MIT.
  */
 using System;
+using System.IO;
 using Redzen.Numerics;
 using SharpNeat.Phenomes;
 
@@ -45,7 +46,7 @@ namespace SharpNeat.Domains.Spelunky
         //for the evaluator
         double percentage = -1;
         int[,] _integralWorld;
-
+        bool generated = false;
         bool stats = false;
         int _nooks;
         int _ends;
@@ -313,6 +314,37 @@ namespace SharpNeat.Domains.Spelunky
             Reset();
             // make a random world by filling it with noise
             RandomizeWorld(World);
+
+            generated = true;
+        }
+        /// <summary>
+        /// Generates the world
+        /// </summary>
+        public void SaveWorld(StreamWriter file)
+        {
+            if (!generated)
+            {
+                GenerateWorld();
+            } else {
+                for (int y = 0; y < _gridHeight; y++)
+                {
+                    for (int x = 0; x < _gridWidth; x++)
+                    {
+                        file.Write(GetWorldPoint(x, y));
+                    }
+                    file.WriteLine();
+                }
+                file.WriteLine("Mikkel Balslev");
+                file.WriteLine("Generated Level");
+                file.WriteLine("4");
+                file.WriteLine("4");
+                file.WriteLine("4");
+                file.WriteLine("NONE");
+                file.WriteLine("2");
+                file.WriteLine();
+                file.WriteLine();
+                file.WriteLine("0");
+            }
         }
         /// <summary>
         /// Get value at coordinates

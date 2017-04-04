@@ -10,6 +10,7 @@
  * along with SharpNEAT; if not, see https://opensource.org/licenses/MIT.
  */
 using System;
+using System.IO;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -179,12 +180,27 @@ namespace SharpNeat.Domains.Spelunky
                     }));
 
                 // Sleep. Even if the sim is about to exit - that way we see the end result for a moment.
-                Thread.Sleep(200);
+                Thread.Sleep(100);
                 if(exit) {
                     break;
                 }
             }
-            Thread.Sleep(1000);
+            string path = Environment.CurrentDirectory + "\\generated.lvl";
+            StreamWriter fileOut = new StreamWriter(path);
+            Save(agent, fileOut);
+            fileOut.Close();
+            /*
+            SaveFileDialog dialog = new SaveFileDialog();
+            dialog.DefaultExt = ".lvl";
+            dialog.FileName = "generated.lvl";
+            dialog.Title = "Save generated Level";
+            DialogResult result = dialog.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                Save(agent, dialog.OpenFile());
+            }
+            */
+            Thread.Sleep(2000);
         }
 
         private void PaintView()
@@ -291,6 +307,15 @@ namespace SharpNeat.Domains.Spelunky
                 _simThread.Abort();
             }
             base.OnHandleDestroyed(e);
+        }
+
+        public void Save(IBlackBox agent, StreamWriter fileOut)//, string pathOut)
+        {
+            //_world = new SpelunkyGenerator(40, 32, 0.6, 2, 2);
+            //FileStream temp = stream as FileStream; //File.Create(pathOut);
+            //temp.Close();
+            
+            _world.SaveWorld(fileOut);
         }
 
         #endregion
