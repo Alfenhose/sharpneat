@@ -90,10 +90,10 @@ namespace SharpNeat.Domains.Spelunky
 
                 //fitness += TotalAverage(generator);
 
-                fitness += 10 * Features(generator);
-                fitness = RowsAndColumns(generator, fitness);
+                fitness += Features(generator);
+                fitness += 0 * RowsAndColumns(generator);
 
-                fitness += 10 * NotFullorempty(generator);
+                fitness += 0 * NotFullorempty(generator);
 
             }
             // Track number of evaluations and test stop condition.
@@ -106,8 +106,9 @@ namespace SharpNeat.Domains.Spelunky
             return new FitnessInfo(fitness, fitness);
         }
 
-        private double RowsAndColumns(SpelunkyGenerator generator, double fitness)
+        private double RowsAndColumns(SpelunkyGenerator generator)
         {
+            double fitness = 0;
             //each row (avoid half empty rows)
             {
                 double target = 0.5;
