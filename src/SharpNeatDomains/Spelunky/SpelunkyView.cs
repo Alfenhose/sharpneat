@@ -36,8 +36,9 @@ namespace SharpNeat.Domains.Spelunky
         readonly Brush _brushBackground = new SolidBrush(Color.Gray);
         readonly Brush _brushWall = new SolidBrush(Color.Chocolate);
         readonly Brush _brushAir = new SolidBrush(Color.Black);//good browns: SaddleBrown, Chocolate
-        readonly Brush _brushStart = new SolidBrush(Color.Blue);
-        readonly Brush _brushEnd = new SolidBrush(Color.Red);
+        readonly Brush _brushStart = new SolidBrush(Color.FromArgb(196, 128, 255, 128));
+        readonly Brush _brushEnd = new SolidBrush(Color.FromArgb(196, 255, 128, 128));
+        readonly Brush _brushRoom = new SolidBrush(Color.FromArgb(196, 128, 128, 255));
 
         IGenomeDecoder<NeatGenome,IBlackBox> _genomeDecoder;
         SpelunkyGenerator _world;
@@ -185,6 +186,20 @@ namespace SharpNeat.Domains.Spelunky
                     break;
                 }
             }
+            for (int i = 0; i < 2; i++)
+            {
+                Thread.Sleep(500);
+                _world.CalculateRooms();
+                Invoke(new MethodInvoker(delegate ()
+                {
+                    PaintView();
+                }));
+            }
+            _world.RemoveRooms();
+            Invoke(new MethodInvoker(delegate ()
+            {
+                PaintView();
+            }));
             string path = Environment.CurrentDirectory + "\\generated.lvl";
             StreamWriter fileOut = new StreamWriter(path);
             Save(agent, fileOut);
@@ -250,7 +265,6 @@ namespace SharpNeat.Domains.Spelunky
                 xg = GridLeft;
                 for(int x=0; x<_world.GridWidth; x++, xg += visualFieldPixelSize)
                 {
-                    // Calc distance of square from agent.
                     switch (_world.GetWorldPoint(x, y))
                     {
                         case 0:
@@ -260,8 +274,27 @@ namespace SharpNeat.Domains.Spelunky
                             g.FillRectangle(_brushWall, xg + 1, yg + 1, visualFieldPixelSize - 2, visualFieldPixelSize - 2);
                             break;
                     }
-                    
                 }
+            }
+            if (_world.Rooms != null) {
+                foreach (Room room in _world.Rooms)
+                {
+                    xg = GridLeft + room.Position._x * visualFieldPixelSize;
+                    yg = GridTop + room.Position._y * visualFieldPixelSize;
+                    g.FillRectangle(_brushRoom, xg + 1, yg + 1, visualFieldPixelSize - 2, visualFieldPixelSize - 2);
+                }
+            }
+            //start
+            {
+                xg = GridLeft + _world.StartPos._x * visualFieldPixelSize;
+                yg = GridTop + _world.StartPos._y * visualFieldPixelSize;
+                g.FillRectangle(_brushStart, xg + 1, yg + 1, visualFieldPixelSize - 2, visualFieldPixelSize - 2);
+            }
+            //end
+            {
+                xg = GridLeft + _world.EndPos._x * visualFieldPixelSize;
+                yg = GridTop + _world.EndPos._y * visualFieldPixelSize;
+                g.FillRectangle(_brushEnd, xg + 1, yg + 1, visualFieldPixelSize - 2, visualFieldPixelSize - 2);
             }
             Refresh();
         }

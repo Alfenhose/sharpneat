@@ -10,6 +10,7 @@
  * along with SharpNEAT; if not, see https://opensource.org/licenses/MIT.
  */
 using System;
+using System.Collections;
 using System.IO;
 using Redzen.Numerics;
 using SharpNeat.Phenomes;
@@ -22,7 +23,7 @@ namespace SharpNeat.Domains.Spelunky
     public class SpelunkyGenerator
     {
         #region Constants
-        
+
         const int wall = 1;
         const int air = 0;
 
@@ -31,7 +32,7 @@ namespace SharpNeat.Domains.Spelunky
         #region Instance Fields
 
         // World parameters.
-		
+
         readonly int _gridWidth;
         readonly int _gridHeight;
         readonly int _mooreSize;
@@ -42,6 +43,8 @@ namespace SharpNeat.Domains.Spelunky
         int[,] _world;
         IntPoint _startPos;
         IntPoint _endPos;
+        
+        public ArrayList Rooms { get; set; }
 
         //for the evaluator
         double percentage = -1;
@@ -73,16 +76,17 @@ namespace SharpNeat.Domains.Spelunky
         {
             _gridWidth = gridWidth;
             _gridHeight = gridHeight;
-            _initPercentage = initPercentage/100.0;
+            _initPercentage = initPercentage / 100.0;
             _mooreSize = mooreSize;
             _steps = steps;
             _rng = new Random();
+            _startPos = new IntPoint(1, 1);
+            _endPos = new IntPoint(_gridWidth - 2, _gridHeight - 2);
         }
 
         #endregion
 
         #region Properties
-
         /// <summary>
         /// Gets the width of the grid in terms of number of squares.
         /// </summary>
@@ -90,7 +94,6 @@ namespace SharpNeat.Domains.Spelunky
         {
             get { return _gridWidth; }
         }
-
         /// <summary>
         /// Gets the height of the grid in terms of number of squares.
         /// </summary>
@@ -98,7 +101,6 @@ namespace SharpNeat.Domains.Spelunky
         {
             get { return _gridHeight; }
         }
-
         /// <summary>
         /// Gets the percentage of cells wich contain air
         /// </summary>
@@ -106,7 +108,6 @@ namespace SharpNeat.Domains.Spelunky
         {
             get { return _initPercentage; }
         }
-
         /// <summary>
         /// Gets the amount of steps being performed.
         /// </summary>
@@ -114,17 +115,18 @@ namespace SharpNeat.Domains.Spelunky
         {
             get { return _steps; }
         }
-
         /// <summary>
         /// Gets the percentage of filled blocks.
         /// </summary>
         public double Percentage
         {
-            get {
-                if (percentage >= 0 ) {
+            get
+            {
+                if (percentage >= 0)
+                {
                     return percentage;
                 }
-                percentage = ((float) (IntegralWorld[GridWidth-1,GridHeight-1])) / ((float) (GridWidth*GridHeight));
+                percentage = ((float)(IntegralWorld[GridWidth - 1, GridHeight - 1])) / ((float)(GridWidth * GridHeight));
                 return percentage;
             }
         }
@@ -143,6 +145,22 @@ namespace SharpNeat.Domains.Spelunky
                 return _integralWorld;
             }
             private set { _integralWorld = value; }
+        }
+        /// <summary>
+        /// Gets the starting position.
+        /// </summary>
+        public IntPoint StartPos
+        {
+            get { return _startPos; }
+            private set { _startPos = value; }
+        }
+        /// <summary>
+        /// Gets the End position.
+        /// </summary>
+        public IntPoint EndPos
+        {
+            get { return _endPos; }
+            private set { _endPos = value; }
         }
         /// <summary>
         /// Returns the number of Loners (single walls surrounded by air).
@@ -312,6 +330,7 @@ namespace SharpNeat.Domains.Spelunky
         {
             // Init world state.
             Reset();
+            SetUpRooms();
             // make a random world by filling it with noise
             RandomizeWorld(World);
 
@@ -325,12 +344,24 @@ namespace SharpNeat.Domains.Spelunky
             if (!generated)
             {
                 GenerateWorld();
-            } else {
+            }
+            else {
                 for (int y = 0; y < _gridHeight; y++)
                 {
                     for (int x = 0; x < _gridWidth; x++)
                     {
-                        file.Write(GetWorldPoint(x, y));
+                        if (StartPos._x == x && StartPos._y == y)
+                        {
+                            file.Write("@");
+                        }
+                        else if (EndPos._x == x && EndPos._y == y)
+                        {
+                            file.Write("X");
+                        }
+                        else
+                        {
+                            file.Write(GetWorldPoint(x, y));
+                        }
                     }
                     file.WriteLine();
                 }
@@ -369,7 +400,7 @@ namespace SharpNeat.Domains.Spelunky
             bool consistent = true;
             var tempWorld = new int[_gridWidth, _gridHeight];
             // Let the chase begin!
-            for(int x = 0; x < GridWidth; x++)
+            for (int x = 0; x < GridWidth; x++)
             {
                 for (int y = 0; y < GridHeight; y++)
                 {
@@ -382,7 +413,7 @@ namespace SharpNeat.Domains.Spelunky
 
                     double value = agent.OutputSignalArray[0];
                     tempWorld[x, y] = (int)Math.Round(value);
-                    if (value < 0 || value > 1) {consistent = false;}
+                    if (value < 0 || value > 1) { consistent = false; }
                 }
             }
             World = tempWorld;
@@ -390,7 +421,7 @@ namespace SharpNeat.Domains.Spelunky
         }
 
         /// <summary>
-        /// counts loners of world
+        /// counts loners and the like of world
         /// </summary>
         public void CalcStats(int[,] world)
         {
@@ -409,11 +440,12 @@ namespace SharpNeat.Domains.Spelunky
                     temp += 2 * GetWorldPoint(x, y + 1);
                     temp += 4 * GetWorldPoint(x - 1, y);
                     temp += 8 * GetWorldPoint(x + 1, y);
-                    
+
                     // when looking at wall
-                    if (GetWorldPoint(x,y) == 1) 
+                    if (GetWorldPoint(x, y) == 1)
                     {
-                        switch (temp){
+                        switch (temp)
+                        {
                             case 0:
                                 _loners++;
                                 break;
@@ -442,9 +474,9 @@ namespace SharpNeat.Domains.Spelunky
                                 break;
                         }
                     }
-                    
+
                     // when looking at empty space
-                    if (GetWorldPoint(x, y) == 0) 
+                    if (GetWorldPoint(x, y) == 0)
                     {
                         switch (temp)
                         {
@@ -505,7 +537,7 @@ namespace SharpNeat.Domains.Spelunky
                     else
                     {
                         //if inside the bounds we set the input to what ever is in that spot
-                        agent.InputSignalArray[index] = GetWorldPoint(x,y);
+                        agent.InputSignalArray[index] = GetWorldPoint(x, y);
                     }
                     index++;
                 }
@@ -515,6 +547,89 @@ namespace SharpNeat.Domains.Spelunky
         #endregion
 
         #region Private Methods
+        /// <summary>
+        /// Sets up the rooms
+        /// </summary>
+        private void SetUpRooms()
+        {
+            Rooms = new ArrayList();
+            for (int x = 2; x < GridWidth; x += 5)
+            {
+                for (int y = 2; y < GridHeight; y += 4)
+                {
+                    Rooms.Add(new Room(new IntPoint(x, y)));
+                }
+            }
+        }
+        /// <summary>
+        /// Remove almost empty rooms
+        /// </summary>
+        public void RemoveRooms()
+        {
+            ArrayList temp = new ArrayList();
+            foreach (Room room in Rooms)
+            {
+                int size = room.Tiles;
+                if (size > 16)
+                {
+                    room.Position = new IntPoint(room.TilesPosition._x / room.Tiles, room.TilesPosition._y / room.Tiles);
+                    room.Tiles = 0;
+                    room.TilesPosition = new IntPoint(0, 0);
+
+                    temp.Add(room);
+                    /*
+                    if (size > 24)
+                    {
+                        if (_rng.Next(2) == 0)
+                        {
+                            temp.Add(new Room(room.Position + new IntPoint(1, 0)));
+                            temp.Add(new Room(room.Position + new IntPoint(-1, 0)));
+                        }
+                        else
+                        {
+                            temp.Add(new Room(room.Position + new IntPoint(0, 1)));
+                            temp.Add(new Room(room.Position + new IntPoint(0, -1)));
+                        }
+                    }
+                    else
+                    {
+                        temp.Add(room);
+                    }*/
+                }
+            }
+            Rooms = temp;
+        }
+        /// <summary>
+        /// Fills the given 2d array with random integers 1 or 0.
+        /// </summary>
+        public void CalculateRooms()
+        {
+            for (int x = 0; x < _gridWidth; x++)
+            {
+                for (int y = 0; y < _gridHeight; y++)
+                {
+                    if (GetWorldPoint(x, y) == 0)
+                    {
+                        Room closest = null;
+                        double distance = double.PositiveInfinity;
+                        foreach (Room room in Rooms)
+                        {
+                            double newDistance = IntPoint.CalculateDistance(room.Position, new IntPoint(x, y));
+                            if (newDistance < distance)
+                            {
+                                closest = room;
+                                distance = newDistance;
+                            }
+                        }
+                        if (closest != null)
+                        {
+                            closest.Tiles++;
+                            closest.TilesPosition += new IntPoint(x, y);
+                        }
+                    }
+                }
+            }
+        }
         /// <summary>
         /// Fills the given 2d array with random integers 1 or 0.
         /// </summary>
@@ -529,18 +644,19 @@ namespace SharpNeat.Domains.Spelunky
                     if (randomNumber > InitPercentage)
                     {
                         cells[x, y] = air;
-                    } else
+                    }
+                    else
                     {
                         cells[x, y] = wall;
                     }
-                    
+
                 }
             }
         }
         /// <summary>
         ///I calculate the integral of the world for calculating the amount of walls at many regions much faster.
         /// </summary>
-        private int[,] CalcIntegralWorld( int[,] world)
+        private int[,] CalcIntegralWorld(int[,] world)
         {
             int x = 0, y = 0;
             int[,] integral = new int[GridWidth, GridHeight];
@@ -551,20 +667,20 @@ namespace SharpNeat.Domains.Spelunky
             y = 0;
             for (x = 1; x < GridWidth; x++)
             {
-                integral[x, y] = world[x, y] + integral[x-1, y];
+                integral[x, y] = world[x, y] + integral[x - 1, y];
             }
             //and the entire first column
             x = 0;
             for (y = 1; y < GridHeight; y++)
             {
-                integral[x, y] = world[x, y] + integral[x, y-1];
+                integral[x, y] = world[x, y] + integral[x, y - 1];
             }
             //now the rest can be calculated more easily.
             for (x = 1; x < GridWidth; x++)
             {
                 for (y = 1; y < GridHeight; y++)
                 {
-                    integral[x, y] = world[x, y] + integral[x - 1, y] + integral[x, y - 1] - integral[x-1,y-1];
+                    integral[x, y] = world[x, y] + integral[x - 1, y] + integral[x, y - 1] - integral[x - 1, y - 1];
                 }
             }
             return integral;
@@ -581,5 +697,22 @@ namespace SharpNeat.Domains.Spelunky
             _loners = -1;
         }
         #endregion
+    }
+    /// <summary>
+    /// room used for room identification
+    /// </summary>
+    public class Room
+    {
+        public IntPoint Position { get; set; }
+        public IntPoint TilesPosition { get; set; }
+        public int Tiles { get; set; }
+        /// <summary>
+        /// room constructor
+        /// </summary>
+        public Room(IntPoint position)
+        {
+            Position = position;
+            Tiles = 0;
+        }
     }
 }

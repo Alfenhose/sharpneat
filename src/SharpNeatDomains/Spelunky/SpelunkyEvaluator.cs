@@ -87,13 +87,18 @@ namespace SharpNeat.Domains.Spelunky
                 {
                     generator.ShapeTheWorld(box);
                 }
+                /*for (int t = 0; t < 2; t++)
+                {
+                    generator.CalculateRooms();
+                }
+                generator.RemoveRooms();*/
 
                 //fitness += TotalAverage(generator);
-
-                fitness += 10 * Features(generator);
-                fitness = RowsAndColumns(generator, fitness);
-
-                fitness += 10 * NotFullorempty(generator);
+                fitness += 1 * SimpleFeatures(generator);
+                //fitness += 1 * RowsAndColumns(generator);
+                //fitness += 1 * NotFullOrEmpty(generator);
+                //fitness += 10 * NoFullOrEmptyRowsOrColumns(generator);
+                //fitness += 5 * Rooms(generator);
 
             }
             // Track number of evaluations and test stop condition.
@@ -106,8 +111,9 @@ namespace SharpNeat.Domains.Spelunky
             return new FitnessInfo(fitness, fitness);
         }
 
-        private double RowsAndColumns(SpelunkyGenerator generator, double fitness)
+        private double RowsAndColumns(SpelunkyGenerator generator)
         {
+            double fitness = 0;
             //each row (avoid half empty rows)
             {
                 double target = 0.5;
@@ -173,171 +179,89 @@ namespace SharpNeat.Domains.Spelunky
             return fitness;
         }
 
-        private double NotFullorempty(SpelunkyGenerator generator)
+        private double NotFullOrEmpty(SpelunkyGenerator generator)
         {
             double fitness = 0;
-
             //not full or empty
             {
                 int value = generator.IntegralWorld[_gridWidth - 1, _gridHeight - 1];
-                if (value > 0 && value < _gridWidth * _gridHeight) fitness += 10;
+                if (value > 0 && value < _gridWidth * _gridHeight)
+                    fitness += 1;
             }
-            //no empty rows
+            return fitness;
+        }
+        private double NoFullOrEmptyRowsOrColumns(SpelunkyGenerator generator)
+        {
+            double fitness = 0;
+            //rows
             {
-                bool hasEmpty = false;
-                if ((generator.IntegralWorld[_gridWidth - 1, 0]) == 0)
+                int value = generator.IntegralWorld[_gridWidth - 1, 0];
+                if (value > 0 && value < _gridWidth)
+                { fitness += 1 / _gridHeight; }
+                for (int y = 1; y < _gridHeight; y++)
                 {
-                    hasEmpty = true;
-                }
-                else for (int y = 1; y < _gridHeight; y++)
-                    {
-                        if ((generator.IntegralWorld[_gridWidth - 1, y] - generator.IntegralWorld[_gridWidth - 1, y - 1]) == 0)
-                        {
-                            hasEmpty = true;
-                            break;
-                        }
-                    }
-                if (!hasEmpty)
-                {
-                    fitness += 10;
+                    value = generator.IntegralWorld[_gridWidth - 1, y] - generator.IntegralWorld[_gridWidth - 1, y - 1];
+                    if (value > 0 && value < _gridWidth)
+                    { fitness += 1/_gridHeight; }
                 }
             }
-            //no empty columns
+            //columns
             {
-                bool hasEmpty = false;
-                if ((generator.IntegralWorld[0, _gridHeight - 1]) == 0)
+                int value = generator.IntegralWorld[0, _gridHeight - 1];
+                if (value > 0 && value < _gridHeight)
+                { fitness += 1 / _gridWidth; }
+                for (int x = 1; x < _gridWidth; x++)
                 {
-                    hasEmpty = true;
-                }
-                else for (int x = 1; x < _gridWidth; x++)
-                    {
-                        if ((generator.IntegralWorld[x, _gridHeight - 1] - generator.IntegralWorld[x - 1, _gridHeight - 1]) == 0)
-                        {
-                            hasEmpty = true;
-                            break;
-                        }
-                    }
-                if (!hasEmpty)
-                {
-                    fitness += 10;
+                    value = generator.IntegralWorld[x, _gridHeight - 1] - generator.IntegralWorld[x - 1, _gridHeight - 1];
+                    if (value > 0 && value < _gridHeight)
+                    { fitness += 1 / _gridWidth; }
                 }
             }
-            //no full rows
-            {
-                bool hasFull = false;
-                if ((generator.IntegralWorld[_gridWidth - 1, 0]) == _gridWidth)
-                {
-                    hasFull = true;
-                }
-                else for (int y = 1; y < _gridHeight; y++)
-                    {
-                        if ((generator.IntegralWorld[_gridWidth - 1, y] - generator.IntegralWorld[_gridWidth - 1, y - 1]) == _gridWidth)
-                        {
-                            hasFull = true;
-                            break;
-                        }
-                    }
-                if (!hasFull)
-                {
-                    fitness += 10;
-                }
-            }
-            //no full columns
-            {
-                bool hasFull = false;
-                if ((generator.IntegralWorld[0, _gridHeight - 1]) == _gridHeight)
-                {
-                    hasFull = true;
-                }
-                else for (int x = 1; x < _gridWidth; x++)
-                    {
-                        if ((generator.IntegralWorld[x, _gridHeight - 1] - generator.IntegralWorld[x - 1, _gridHeight - 1]) == _gridHeight)
-                        {
-                            hasFull = true;
-                            break;
-                        }
-                    }
-                if (!hasFull)
-                {
-                    fitness += 10;
-                }
-            }
-
             return fitness;
         }
 
         private double Features(SpelunkyGenerator generator)
         {
             double fitness = 0;
-            //loners
+            double weight = 0.1;
+            fitness += weight * BlockProximity(5, generator.Loners);
+            fitness += weight * BlockProximity(5, generator.Holes);
+            fitness += weight * BlockProximity(130, generator.Solids);
+            fitness += weight * BlockProximity(288, generator.Empties);
+            fitness += weight * BlockProximity(50, generator.Tunnels);
+            fitness += weight * BlockProximity(5, generator.Pits);
+            fitness += weight * BlockProximity(60, generator.Platforms);
+            fitness += weight * BlockProximity(8, generator.Spires);
+            fitness += weight * BlockProximity(25, generator.Nooks);
+            fitness += weight * BlockProximity(51, generator.Ends);
+            return fitness;
+        }
+        private double SimpleFeatures(SpelunkyGenerator generator)
+        {
+            double fitness = 0;
+            double weight = 0.01;
+            fitness += weight * 5 * BlockProximity(0.0, generator.Loners);
+            fitness += weight * 5 * BlockProximity(0.0, generator.Holes);
+            fitness += weight * 10 * BlockProximity(32.0, generator.Nooks);
+            fitness += weight * 40 * BlockProximity(172, generator.Solids);
+            fitness += weight * 40 * BlockProximity(256, generator.Empties);
+            return fitness;
+        }
+
+        private double BlockProximity(double target, double value)
+        {
+            return Math.Min(Math.Max(SqrProximityToTarget(target/1280.0, value/1280.0), 0),1);
+        }
+
+        private double Rooms(SpelunkyGenerator generator)
+        {
+            double fitness = 0;
+            //roomCount
             {
-                double target = 5 / 1280.0;
-                double weight = 100;
-                double loners = Math.Min(generator.Loners / 1280.0, 1);
-                fitness += weight * SqrProximityToTarget(target, loners);
-            }
-            //holes
-            {
-                double target = 5 / 1280.0;
-                double weight = 50;
-                double holes = Math.Min(generator.Holes / 1280.0, 1);
-                fitness += weight * SqrProximityToTarget(target, holes);
-            }
-            //solids
-            {
-                double target = 130 / 1280.0;
-                double weight = 25;
-                double solids = Math.Min(generator.Solids / 1280.0, 1);
-                fitness += weight * SqrProximityToTarget(target, solids);
-            }
-            //empties
-            {
-                double target = 288 / 1280.0;
-                double weight = 50;
-                double empties = Math.Min(generator.Empties / 1280.0, 1);
-                fitness += weight * SqrProximityToTarget(target, empties);
-            }
-            //tunnels
-            {
-                double target = 50 / 1280.0;
-                double weight = 25;
-                double tunnels = Math.Min(generator.Tunnels / 1280.0, 1);
-                fitness += weight * SqrProximityToTarget(target, tunnels);
-            }
-            //pits
-            {
-                double target = 5 / 1280.0;
-                double weight = 50;
-                double pits = Math.Min(generator.Pits / 1280.0, 1);
-                fitness += weight * SqrProximityToTarget(target, pits);
-            }
-            //platforms
-            {
-                double target = 60 / 1280.0;
-                double weight = 25;
-                double platforms = Math.Min(generator.Platforms / 1280.0, 1);
-                fitness += weight * SqrProximityToTarget(target, platforms);
-            }
-            //spires
-            {
-                double target = 11 / 1280.0;
-                double weight = 50;
-                double spires = Math.Min(generator.Spires / 1280.0, 1);
-                fitness += weight * SqrProximityToTarget(target, spires);
-            }
-            //nooks
-            {
-                double target = 25 / 1280.0;
-                double weight = 100;
-                double nooks = Math.Min(generator.Nooks / 1280.0, 1);
-                fitness += weight * SqrProximityToTarget(target, nooks);
-            }
-            //ends
-            {
-                double target = 51/ 1280.0;
-                double weight = 50;
-                double ends = Math.Min(generator.Ends / 1280.0, 1);
-                fitness += weight * SqrProximityToTarget(target, ends);
+                double target = 1;
+                double weight = 1;
+                double roomCount = generator.Rooms.Count/12.0;
+                fitness += weight * Math.Min(SqrProximityToTarget(target, roomCount),0);
             }
             return fitness;
         }
