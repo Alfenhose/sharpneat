@@ -93,11 +93,13 @@ namespace SharpNeat.Domains.Spelunky
                 }
                 generator.RemoveRooms();*/
 
-                //fitness += TotalAverage(generator);
-                fitness += 1 * SimpleFeatures(generator);
+                fitness += 1 * TotalAverage(generator);
+                fitness += 1 * NotFullOrEmpty(generator);
+                fitness += 1 * NoFullOrEmptyRowsOrColumns(generator);
+
+                fitness += 2 * Consistency(generator);
                 //fitness += 1 * RowsAndColumns(generator);
-                //fitness += 1 * NotFullOrEmpty(generator);
-                //fitness += 10 * NoFullOrEmptyRowsOrColumns(generator);
+                fitness += 1 * HorizontalORVertical(generator);
                 //fitness += 5 * Rooms(generator);
 
             }
@@ -192,29 +194,33 @@ namespace SharpNeat.Domains.Spelunky
         }
         private double NoFullOrEmptyRowsOrColumns(SpelunkyGenerator generator)
         {
-            double fitness = 0;
+            double fitness = 1;
             //rows
             {
                 int value = generator.IntegralWorld[_gridWidth - 1, 0];
-                if (value > 0 && value < _gridWidth)
-                { fitness += 1 / _gridHeight; }
+                if (value == 0 || value == _gridWidth)
+                    return 0;
+                //{ fitness += 1 / _gridHeight; }
                 for (int y = 1; y < _gridHeight; y++)
                 {
                     value = generator.IntegralWorld[_gridWidth - 1, y] - generator.IntegralWorld[_gridWidth - 1, y - 1];
-                    if (value > 0 && value < _gridWidth)
-                    { fitness += 1/_gridHeight; }
+                    if (value == 0 || value == _gridWidth)
+                        return 0;
+                    //{ fitness += 1/_gridHeight; }
                 }
             }
             //columns
             {
                 int value = generator.IntegralWorld[0, _gridHeight - 1];
-                if (value > 0 && value < _gridHeight)
-                { fitness += 1 / _gridWidth; }
+                if (value == 0 || value == _gridHeight)
+                    return 0;
+                //{ fitness += 1 / _gridWidth; }
                 for (int x = 1; x < _gridWidth; x++)
                 {
                     value = generator.IntegralWorld[x, _gridHeight - 1] - generator.IntegralWorld[x - 1, _gridHeight - 1];
-                    if (value > 0 && value < _gridHeight)
-                    { fitness += 1 / _gridWidth; }
+                    if (value == 0 || value == _gridHeight)
+                        return 0;
+                    //{ fitness += 1 / _gridWidth; }
                 }
             }
             return fitness;
@@ -236,15 +242,23 @@ namespace SharpNeat.Domains.Spelunky
             fitness += weight * BlockProximity(51, generator.Ends);
             return fitness;
         }
-        private double SimpleFeatures(SpelunkyGenerator generator)
+        private double Consistency(SpelunkyGenerator generator)
         {
             double fitness = 0;
-            double weight = 0.01;
-            fitness += weight * 5 * BlockProximity(0.0, generator.Loners);
-            fitness += weight * 5 * BlockProximity(0.0, generator.Holes);
-            fitness += weight * 10 * BlockProximity(32.0, generator.Nooks);
-            fitness += weight * 40 * BlockProximity(172, generator.Solids);
-            fitness += weight * 40 * BlockProximity(256, generator.Empties);
+            double weight = 0.5;
+            fitness += weight * 1 * BlockProximity(80, generator.Solids);
+            fitness += weight * 1 * BlockProximity(280, generator.Empties);
+            return fitness;
+        }
+        private double HorizontalORVertical(SpelunkyGenerator generator)
+        {
+            double fitness = 0;
+            double weight = 0.1;
+            if (generator.Horizontals > 0 && generator.Verticals > 0)
+            {
+                fitness += weight * 8 * (generator.Horizontals / generator.Verticals);
+                fitness += weight * 2 * (generator.Verticals / generator.Horizontals);
+            }
             return fitness;
         }
 
@@ -260,7 +274,7 @@ namespace SharpNeat.Domains.Spelunky
             {
                 double target = 1;
                 double weight = 1;
-                double roomCount = generator.Rooms.Count/12.0;
+                double roomCount = generator.Rooms.Count/24;
                 fitness += weight * Math.Min(SqrProximityToTarget(target, roomCount),0);
             }
             return fitness;
@@ -270,9 +284,9 @@ namespace SharpNeat.Domains.Spelunky
         {
             double fitness = 0;
             {
-                double target = 0.30;
+                double target = 0.50;
                 double weight = 1;
-                fitness += weight * ProximityToTarget(target, generator.Percentage);
+                fitness += weight * SqrProximityToTarget(target, generator.Percentage);
             }
             return fitness;
         }

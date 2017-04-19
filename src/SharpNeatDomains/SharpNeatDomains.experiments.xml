@@ -596,13 +596,13 @@ The problem domain view allows the performance of the best genome to be observed
         <Iters>3</Iters>
       </Activation>
       <ComplexityRegulationStrategy>Relative</ComplexityRegulationStrategy>
-      <ComplexityThreshold>10</ComplexityThreshold>
+      <ComplexityThreshold>50</ComplexityThreshold>
       <TrialsPerEvaluation>10</TrialsPerEvaluation>
       <GridWidth>40</GridWidth>
       <GridHeight>32</GridHeight>
       <InitPercentage>50</InitPercentage>
-      <MooreSize>1</MooreSize>
-      <Steps>5</Steps>
+      <MooreSize>2</MooreSize>
+      <Steps>3</Steps>
       <Description>
         Spelunky 
       </Description>

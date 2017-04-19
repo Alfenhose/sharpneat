@@ -186,20 +186,31 @@ namespace SharpNeat.Domains.Spelunky
                     break;
                 }
             }
-            for (int i = 0; i < 2; i++)
+
+            //carve the path
+            Thread.Sleep(1000);
+            _world.CarveRoute();
+            Invoke(new MethodInvoker(delegate ()
+            {
+                PaintView();
+            }));
+            Thread.Sleep(1000);
+            /*for (int i = 0; i < 2; i++)
             {
                 Thread.Sleep(500);
                 _world.CalculateRooms();
+                _world.RecalculateRooms();
                 Invoke(new MethodInvoker(delegate ()
                 {
                     PaintView();
                 }));
             }
-            _world.RemoveRooms();
+            _world.RecalculateRooms();
+            _world.CalculateConnections();
             Invoke(new MethodInvoker(delegate ()
             {
                 PaintView();
-            }));
+            }));*/
             string path = Environment.CurrentDirectory + "\\generated.lvl";
             StreamWriter fileOut = new StreamWriter(path);
             Save(agent, fileOut);
@@ -276,7 +287,7 @@ namespace SharpNeat.Domains.Spelunky
                     }
                 }
             }
-            if (_world.Rooms != null) {
+            if (false && _world.Rooms != null) {
                 foreach (Room room in _world.Rooms)
                 {
                     xg = GridLeft + room.Position._x * visualFieldPixelSize;
@@ -285,12 +296,14 @@ namespace SharpNeat.Domains.Spelunky
                 }
             }
             //start
+            if (false)
             {
                 xg = GridLeft + _world.StartPos._x * visualFieldPixelSize;
                 yg = GridTop + _world.StartPos._y * visualFieldPixelSize;
                 g.FillRectangle(_brushStart, xg + 1, yg + 1, visualFieldPixelSize - 2, visualFieldPixelSize - 2);
             }
             //end
+            if (false)
             {
                 xg = GridLeft + _world.EndPos._x * visualFieldPixelSize;
                 yg = GridTop + _world.EndPos._y * visualFieldPixelSize;

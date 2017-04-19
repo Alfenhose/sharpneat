@@ -14,6 +14,7 @@ using System.Collections;
 using System.IO;
 using Redzen.Numerics;
 using SharpNeat.Phenomes;
+using System.Collections.Generic;
 
 namespace SharpNeat.Domains.Spelunky
 {
@@ -61,6 +62,9 @@ namespace SharpNeat.Domains.Spelunky
         int _tunnels;
         int _spires;
         int _platforms;
+
+        int _horizontal;
+        int _vertical;
 
         // Random number generator.
         Random _rng;
@@ -303,6 +307,34 @@ namespace SharpNeat.Domains.Spelunky
             }
         }
         /// <summary>
+        /// Returns the number of horizontal walls (wall with air on top or on bottom).
+        /// </summary>
+        public int Horizontals
+        {
+            get
+            {
+                if (!stats)
+                {
+                    CalcStats(World);
+                }
+                return _horizontal;
+            }
+        }
+        /// <summary>
+        /// Returns the number of vertical walls (wall with air on at least one side).
+        /// </summary>
+        public int Verticals
+        {
+            get
+            {
+                if (!stats)
+                {
+                    CalcStats(World);
+                }
+                return _vertical;
+            }
+        }
+        /// <summary>
         /// Gets the integral of the world.
         /// </summary>
         public int[,] World
@@ -457,15 +489,29 @@ namespace SharpNeat.Domains.Spelunky
                                 break;
                             case 3:
                                 _platforms++;
+                                _horizontal++;
                                 break;
                             case 4:
                                 _ends++;
                                 break;
+                            case 7:
+                                _vertical++;
+                                break;
                             case 8:
                                 _ends++;
                                 break;
+                            case 11:
+                                _vertical++;
+                                break;
                             case 12:
                                 _spires++;
+                                _vertical++;
+                                break;
+                            case 13:
+                                _horizontal++;
+                                break;
+                            case 14:
+                                _horizontal++;
                                 break;
                             case 15:
                                 _solids++;
@@ -544,27 +590,10 @@ namespace SharpNeat.Domains.Spelunky
             }
         }
 
-        #endregion
-
-        #region Private Methods
         /// <summary>
-        /// Sets up the rooms
+        /// Remove almost empty rooms and move the not empty rooms
         /// </summary>
-        private void SetUpRooms()
-        {
-            Rooms = new ArrayList();
-            for (int x = 2; x < GridWidth; x += 5)
-            {
-                for (int y = 2; y < GridHeight; y += 4)
-                {
-                    Rooms.Add(new Room(new IntPoint(x, y)));
-                }
-            }
-        }
-        /// <summary>
-        /// Remove almost empty rooms
-        /// </summary>
-        public void RemoveRooms()
+        public void RecalculateRooms()
         {
             ArrayList temp = new ArrayList();
             foreach (Room room in Rooms)
@@ -578,6 +607,7 @@ namespace SharpNeat.Domains.Spelunky
 
                     temp.Add(room);
                     /*
+                    //An attempt at making the rooms multiply if they contain too many tiles
                     if (size > 24)
                     {
                         if (_rng.Next(2) == 0)
@@ -600,7 +630,7 @@ namespace SharpNeat.Domains.Spelunky
             Rooms = temp;
         }
         /// <summary>
-        /// Fills the given 2d array with random integers 1 or 0.
+        /// Calculate the rooms closest tiles,adding their locations together and keeping count of the amount
         /// </summary>
         public void CalculateRooms()
         {
@@ -627,6 +657,221 @@ namespace SharpNeat.Domains.Spelunky
                             closest.TilesPosition += new IntPoint(x, y);
                         }
                     }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Calculate the interconnections in between the rooms, place start and end and choose a route
+        /// </summary>
+        public void CalculateConnections()
+        {
+            ArrayList startrooms = new ArrayList();
+            foreach (Room room in Rooms)
+            {
+                if (room.Position._y < 4)
+                {
+                    startrooms.Add(room);
+                }
+
+                foreach (Room neighbour in Rooms)
+                {
+                    if (!room.Equals(neighbour))
+                    {
+                        IntPoint distance = (neighbour.Position - room.Position);
+                        int manhattanDistance = Math.Abs(distance._x) + Math.Abs(distance._y);
+                        int chebyskovDistance = Math.Max(Math.Abs(distance._x), Math.Abs(distance._y));
+
+                        if (distance._y >= -2 && manhattanDistance < 7)
+                        {
+                            room.AddConnection(neighbour);
+                        }
+                    }
+                }
+            }
+            //now we have the connections now we make a route
+            int highestDepth = 0;
+            Room end = new Room(new IntPoint(5, 4));
+            Room start = new Room(new IntPoint(_gridWidth-5, _gridHeight-4));
+
+            //foreach (Room origin in startrooms) {
+            if (startrooms.Count > 0)
+            {
+                start = startrooms[_rng.Next(startrooms.Count)] as Room;
+                HashSet<Room> usedrooms = new HashSet<Room>();
+                Stack<Room> thisDepth = new Stack<Room>();
+                Stack<Room> nextDepth = new Stack<Room>();
+                usedrooms.Add(start);
+                thisDepth.Push(start);
+                int depth = 0;
+
+                while (thisDepth.Count > 0)
+                {
+                    Room room = thisDepth.Pop();
+                    foreach (Room connection in room.Connections)
+                    {
+                        if (!usedrooms.Contains(connection))
+                        {
+                            nextDepth.Push(connection);
+                        }
+                    }
+                    if (thisDepth.Count == 0 && nextDepth.Count > 0)
+                    {
+                        thisDepth.Clear();
+                        thisDepth = nextDepth;
+                        nextDepth = new Stack<Room>();
+                        depth++;
+                        if (depth > highestDepth)
+                        {
+                            highestDepth = depth;
+                            end = room;
+                            start = start;
+                        }
+                    }
+                }
+            }
+            //now we ought to have a start and a end room
+            StartPos = start.Position;
+            EndPos = end.Position;
+        }
+
+        /// <summary>
+        /// Carve a route through the level, removing as little dirt as possible
+        /// </summary>
+        public void CarveRoute()
+        {
+            //First select the starting position
+            int startX = _rng.Next(5, _gridWidth - 5);
+            int startY = _rng.Next(4, 6);
+            PlaceStart(startX,startY);
+            //pick any point really as the exit
+            int endX = _rng.Next(0, _gridWidth);
+            int endY = _gridHeight - 1;
+            PlaceEnd(endX,endY);
+            
+            MapKey startKey = new MapKey(startX, startY);
+            MapKey endKey = new MapKey(endX, endY);
+            //Now start the depth first search
+            Func<MapKey, MapKey, double> Heuristic = (a,b) => Math.Sqrt(Math.Pow(b.X-a.X,2)+Math.Pow(b.Y-a.Y,2));
+            //Func<MapKey, MapKey, double> Heuristic = (a, b) => (Math.Abs(b.X - a.X) + Math.Abs(b.Y - a.Y));
+            //Func<MapKey, MapKey, double> Heuristic = (a, b) => Math.Sqrt(Math.Abs(b.X - a.X) + Math.Pow(b.Y - a.Y, 2));
+            //Dictionary<MapKey, BFSNode> map = new Dictionary<MapKey, BFSNode>();
+            //Dictionary<IntPoint, IntPoint> cameFrom = new Dictionary<IntPoint, IntPoint>();
+            //Dictionary<IntPoint, double> gScore = new Dictionary<IntPoint, double>();
+            //Dictionary<IntPoint, double> fScore = new Dictionary<IntPoint, double>();
+            HashSet<MapKey> closedSet = new HashSet<MapKey>();
+            HashSet<MapKey> openSet = new HashSet<MapKey>();
+            C5.IntervalHeap<BFSNode> openQueue = new C5.IntervalHeap<BFSNode>();
+
+            //setup
+            BFSNode startnode = new BFSNode(startKey);
+            BFSNode endnode = new BFSNode(endKey);
+            startnode.GScore = 0;
+            startnode.FScore = Heuristic(startKey, endKey);
+
+            openQueue.Add(startnode);
+            openSet.Add(startKey);
+            //map.Add(startKey, startnode);
+            int check = 0;
+            //while (!queue.IsEmpty)
+            while (!openQueue.IsEmpty)
+            {
+                check++;
+                BFSNode current = openQueue.DeleteMin();
+                System.Console.Out.WriteLine($"check no. {check}... node with pos: [{current.X},{current.Y}] and score: {current.FScore}");
+                if (current.Pos.Equals(endKey))
+                {
+                    endnode = current;
+                    break;
+                }
+                openSet.Remove(current.Pos);
+                closedSet.Add(current.Pos);
+                
+                //add neighbours
+                ArrayList neighbours = new ArrayList();
+                if (current.X > 0) neighbours.Add(new MapKey(current.X - 1, current.Y));
+                if (current.X < GridWidth - 1) neighbours.Add(new MapKey(current.X + 1, current.Y));
+                if (current.Y > 0) neighbours.Add(new MapKey(current.X, current.Y - 1));
+                if (current.Y < GridHeight - 1) neighbours.Add(new MapKey(current.X, current.Y + 1));
+                //
+                foreach (MapKey neighbour in neighbours)
+                {
+                    BFSNode neighbourNode = new BFSNode(neighbour);
+                    if (closedSet.Contains(neighbour))
+                        continue;
+                    /*if (!openSet.Contains(neighbour))
+                    {
+                        openSet.Add(neighbour);
+                        //map.Add(neighbour, neighbourNode);
+                    }
+                    else
+                    {
+                        //if (!map.TryGetValue(neighbour, out neighbourNode))
+                        {
+                            //throw new Exception("failed collecting the node from the map");
+                        }
+                    }*/
+                    if (openSet.Contains(neighbour))
+                        continue;
+                    openSet.Add(neighbour);
+                    bool up = neighbour.Y < current.Y;
+                    bool down = neighbour.Y > current.Y;
+                    bool wall = GetWorldPoint(neighbour.X, neighbour.Y) == 1;
+                    double cost = (wall ? down ? 500 : up ? 50 : 200 : down ? 1 : up ? 1 : 1);
+
+                    double tenativeScore = current.GScore + 1 + cost; //+ 2 * GetWorldPoint(neighbour.X, neighbour.Y);
+                    
+                    //if (tenativeScore >= neighbourNode.GScore)
+                    //    continue;
+                    neighbourNode.GScore = tenativeScore;
+                    neighbourNode.FScore = tenativeScore + Heuristic(neighbour, endKey);
+                    neighbourNode.Previous = current;
+
+                    openQueue.Add(neighbourNode);
+                }
+                neighbours.Clear();
+            }
+            // now carve the route out
+            BFSNode carveNode = endnode;
+            while (carveNode != null)
+            {
+                _world[carveNode.X, carveNode.Y] = 0;
+                carveNode = carveNode.Previous;
+            }
+        }
+
+        #endregion
+
+        #region Private Methods
+        private void PlaceStart(int x, int y)
+        {
+            _startPos = new IntPoint(x, y);
+            _world[x - 1, y - 1] = 0;
+            _world[x, y - 1] = 0;
+            _world[x + 1, y - 1] = 0;
+            _world[x - 1, y] = 0;
+            _world[x, y] = 0;
+            _world[x + 1, y] = 0;
+            _world[x - 1, y + 1] = 1;
+            _world[x, y + 1] = 1;
+            _world[x + 1, y + 1] = 1;
+        }
+        private void PlaceEnd(int x, int y)
+        {
+            _endPos = new IntPoint(x, y);
+        }
+
+        /// <summary>
+        /// Sets up the rooms
+        /// </summary>
+        private void SetUpRooms()
+        {
+            Rooms = new ArrayList();
+            for (int x = 2; x < GridWidth; x += 5)
+            {
+                for (int y = 2; y < GridHeight; y += 4)
+                {
+                    Rooms.Add(new Room(new IntPoint(x, y)));
                 }
             }
         }
@@ -705,6 +950,7 @@ namespace SharpNeat.Domains.Spelunky
     {
         public IntPoint Position { get; set; }
         public IntPoint TilesPosition { get; set; }
+        public ArrayList Connections {get; private set;}
         public int Tiles { get; set; }
         /// <summary>
         /// room constructor
@@ -713,6 +959,18 @@ namespace SharpNeat.Domains.Spelunky
         {
             Position = position;
             Tiles = 0;
+            Connections = new ArrayList();
+        }
+
+        public void AddConnection(Room _room)
+        {
+            Connections.Add(_room);
+        }
+
+        public override bool Equals(object obj)
+        {
+            Room other = obj as Room;
+            return (other == null)? false : (other.Position.Equals(Position));
         }
     }
 }

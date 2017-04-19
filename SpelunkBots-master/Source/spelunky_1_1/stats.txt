@@ -2,17 +2,17 @@
 |  SPELUNKY EXTENDED STATS  |
 +---------------------------+
 
-CRATES OPENED:      11
+CRATES OPENED:      12
 CHESTS OPENED:      4
 
-IDOLS GRABBED:      64
-IDOLS CONVERTED:    8
+IDOLS GRABBED:      72
+IDOLS CONVERTED:    9
 
-DAMSELS GRABBED:    629
+DAMSELS GRABBED:    631
 KISSES BOUGHT:      0
 DAMSELS BOUGHT:     1
 DAMSELS SAVED:      18
-DAMSELS KILLED:     138
+DAMSELS KILLED:     139
 
 ITEMS BOUGHT:       0
 ITEMS STOLEN:       3
@@ -23,9 +23,9 @@ DICE GAMES LOST:    0
 
 LEVEL        DEATHS
 ------------+------------
- 1          | 350
+ 1          | 351
  2          | 18
- 3          | 6
+ 3          | 7
  4          | 9
  5          | 7
  6          | 4
@@ -40,12 +40,12 @@ LEVEL        DEATHS
  15         | 1
  16         | 4
 ------------+------------
- TOTAL      | 420
+ TOTAL      | 422
 
 ENEMY        DEATHS
 ------------+------------
  ???        | 0
- SNAKE      | 5
+ SNAKE      | 6
  SPIDER     | 8
  ???        | 0
  CAVEMAN    | 1
@@ -75,7 +75,7 @@ MISC         DEATHS
  ???        | 0
  CRUSHED    | 44
  LONG FALL  | 34
- SPIKES     | 31
+ SPIKES     | 32
  ???        | 0
  ARROW TRAP | 31
  SPEAR TRAP | 2
@@ -87,11 +87,11 @@ MISC         DEATHS
 ENEMY        KILLS
 ------------+------------
  BAT        | 95
- SNAKE      | 224
- SPIDER     | 61
+ SNAKE      | 228
+ SPIDER     | 64
  G. SPIDER  | 2
  CAVEMAN    | 4
- SKELETON   | 16
+ SKELETON   | 17
  ZOMBIE     | 7
  ???        | 0
  FROG       | 16
@@ -101,7 +101,7 @@ ENEMY        KILLS
  PIRANHA    | 1
  ???        | 0
  ???        | 0
- YETI KING  | 25
+ YETI KING  | 27
  ???        | 0
  ???        | 0
  ???        | 0
@@ -110,4 +110,4 @@ ENEMY        KILLS
  ???        | 0
  OLMEC      | 1
 ------------+------------
- TOTAL      | 493
+ TOTAL      | 503

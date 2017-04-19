@@ -40,6 +40,10 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="C5, Version=2.4.5947.17248, Culture=neutral, PublicKeyToken=282361b99ded7e8e, processorArchitecture=MSIL">
+      <HintPath>..\packages\C5.2.4.5947.17249\lib\net45\C5.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="log4net, Version=2.0.7.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <HintPath>..\packages\log4net.2.0.7\lib\net45-full\log4net.dll</HintPath>
       <Private>True</Private>
@@ -128,6 +132,8 @@
       <DependentUpon>NeatGenomeView.cs</DependentUpon>
     </Compile>
     <Compile Include="PolarPoint.cs" />
+    <Compile Include="Spelunky\MapKey.cs" />
+    <Compile Include="Spelunky\BFSNode.cs" />
     <Compile Include="Spelunky\SpelunkyEvaluator.cs" />
     <Compile Include="Spelunky\SpelunkyExperiment.cs" />
     <Compile Include="Spelunky\SpelunkyView.cs">
