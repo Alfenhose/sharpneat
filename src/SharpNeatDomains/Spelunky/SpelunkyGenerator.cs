@@ -751,19 +751,15 @@ namespace SharpNeat.Domains.Spelunky
             
             MapKey startKey = new MapKey(startX, startY);
             MapKey endKey = new MapKey(endX, endY);
-            //Now start the depth first search
-            Func<MapKey, MapKey, double> Heuristic = (a,b) => Math.Sqrt(Math.Pow(b.X-a.X,2)+Math.Pow(b.Y-a.Y,2));
-            //Func<MapKey, MapKey, double> Heuristic = (a, b) => (Math.Abs(b.X - a.X) + Math.Abs(b.Y - a.Y));
-            //Func<MapKey, MapKey, double> Heuristic = (a, b) => Math.Sqrt(Math.Abs(b.X - a.X) + Math.Pow(b.Y - a.Y, 2));
-            //Dictionary<MapKey, BFSNode> map = new Dictionary<MapKey, BFSNode>();
-            //Dictionary<IntPoint, IntPoint> cameFrom = new Dictionary<IntPoint, IntPoint>();
-            //Dictionary<IntPoint, double> gScore = new Dictionary<IntPoint, double>();
-            //Dictionary<IntPoint, double> fScore = new Dictionary<IntPoint, double>();
+
+            //Now start the search
+
+            //setup
+            Func<MapKey, MapKey, double> Heuristic = (a, b) => Math.Sqrt(Math.Pow(b.X - a.X, 2) + Math.Pow(b.Y - a.Y, 2));
             HashSet<MapKey> closedSet = new HashSet<MapKey>();
             HashSet<MapKey> openSet = new HashSet<MapKey>();
             C5.IntervalHeap<BFSNode> openQueue = new C5.IntervalHeap<BFSNode>();
 
-            //setup
             BFSNode startnode = new BFSNode(startKey);
             BFSNode endnode = new BFSNode(endKey);
             startnode.GScore = 0;
@@ -771,14 +767,14 @@ namespace SharpNeat.Domains.Spelunky
 
             openQueue.Add(startnode);
             openSet.Add(startKey);
-            //map.Add(startKey, startnode);
-            int check = 0;
-            //while (!queue.IsEmpty)
+            DateTime tiem = DateTime.Now;
+            //int check = 0;
+
             while (!openQueue.IsEmpty)
             {
-                check++;
+                //check++;
                 BFSNode current = openQueue.DeleteMin();
-                System.Console.Out.WriteLine($"check no. {check}... node with pos: [{current.X},{current.Y}] and score: {current.FScore}");
+                //System.Console.Out.WriteLine($"check no. {check}... node with pos: [{current.X},{current.Y}] and score: {current.FScore}");
                 if (current.Pos.Equals(endKey))
                 {
                     endnode = current;
@@ -799,18 +795,6 @@ namespace SharpNeat.Domains.Spelunky
                     BFSNode neighbourNode = new BFSNode(neighbour);
                     if (closedSet.Contains(neighbour))
                         continue;
-                    /*if (!openSet.Contains(neighbour))
-                    {
-                        openSet.Add(neighbour);
-                        //map.Add(neighbour, neighbourNode);
-                    }
-                    else
-                    {
-                        //if (!map.TryGetValue(neighbour, out neighbourNode))
-                        {
-                            //throw new Exception("failed collecting the node from the map");
-                        }
-                    }*/
                     if (openSet.Contains(neighbour))
                         continue;
                     openSet.Add(neighbour);
@@ -819,10 +803,8 @@ namespace SharpNeat.Domains.Spelunky
                     bool wall = GetWorldPoint(neighbour.X, neighbour.Y) == 1;
                     double cost = (wall ? down ? 500 : up ? 50 : 200 : down ? 1 : up ? 1 : 1);
 
-                    double tenativeScore = current.GScore + 1 + cost; //+ 2 * GetWorldPoint(neighbour.X, neighbour.Y);
-                    
-                    //if (tenativeScore >= neighbourNode.GScore)
-                    //    continue;
+                    double tenativeScore = current.GScore + 1 + cost;
+
                     neighbourNode.GScore = tenativeScore;
                     neighbourNode.FScore = tenativeScore + Heuristic(neighbour, endKey);
                     neighbourNode.Previous = current;
@@ -833,16 +815,96 @@ namespace SharpNeat.Domains.Spelunky
             }
             // now carve the route out
             BFSNode carveNode = endnode;
+            int length = 0;
+            int carved = 0;
             while (carveNode != null)
             {
+                length++;
+                if (_world[carveNode.X, carveNode.Y] == 1)
+                {
+                    carved++;
+                }
                 _world[carveNode.X, carveNode.Y] = 0;
                 carveNode = carveNode.Previous;
             }
+            System.Console.Out.WriteLine($"Finished carving the route in {check} checks.\nThe length was {length} and {carved} nodes where removed");
         }
+        /// <summary>
+        /// Check if a level is completeable
+        /// </summary>
+        public bool Completable()
+        {
+            //First select the starting position
+            //pick any point really as the exit
 
+            MapKey startKey = new MapKey(StartPos._x, StartPos._y);
+            MapKey endKey = new MapKey(EndPos._x, EndPos._y);
+
+            //Now start the search
+
+            //setup
+            Func<MapKey, MapKey, double> Heuristic = (a, b) => Math.Sqrt(Math.Pow(b.X - a.X, 2) + Math.Pow(b.Y - a.Y, 2));
+            HashSet<MapKey> closedSet = new HashSet<MapKey>();
+            HashSet<MapKey> openSet = new HashSet<MapKey>();
+            C5.IntervalHeap<BFSNode> openQueue = new C5.IntervalHeap<BFSNode>();
+
+            BFSNode startnode = new BFSNode(startKey);
+            BFSNode endnode = new BFSNode(endKey);
+            startnode.GScore = 0;
+            startnode.FScore = Heuristic(startKey, endKey);
+
+            openQueue.Add(startnode);
+            openSet.Add(startKey);
+            //int check = 0;
+            while (!openQueue.IsEmpty)
+            {
+                //check++;
+                BFSNode current = openQueue.DeleteMin();
+                //System.Console.Out.WriteLine($"check no. {check}... node with pos: [{current.X},{current.Y}] and score: {current.FScore}");
+                if (current.Pos.Equals(endKey))
+                {
+                    return true;
+                }
+                openSet.Remove(current.Pos);
+                closedSet.Add(current.Pos);
+
+                //add neighbours
+                ArrayList neighbours = new ArrayList();
+                if (current.X > 0) neighbours.Add(new MapKey(current.X - 1, current.Y));
+                if (current.X < GridWidth - 1) neighbours.Add(new MapKey(current.X + 1, current.Y));
+                if (current.Y > 0) neighbours.Add(new MapKey(current.X, current.Y - 1));
+                if (current.Y < GridHeight - 1) neighbours.Add(new MapKey(current.X, current.Y + 1));
+                //
+                foreach (MapKey neighbour in neighbours)
+                {
+                    BFSNode neighbourNode = new BFSNode(neighbour);
+                    if (closedSet.Contains(neighbour))
+                        continue;
+                    if (openSet.Contains(neighbour))
+                        continue;
+
+                    bool wall = GetWorldPoint(neighbour.X, neighbour.Y) == 1;
+                    if (wall)
+                    {
+                        closedSet.Add(current.Pos);
+                    }
+
+                    openSet.Add(neighbour);
+                    double tenativeScore = current.GScore + 1;
+
+                    neighbourNode.GScore = tenativeScore;
+                    neighbourNode.FScore = tenativeScore + Heuristic(neighbour, endKey);
+                    neighbourNode.Previous = current;
+
+                    openQueue.Add(neighbourNode);
+                }
+                neighbours.Clear();
+            }
+            return false;
+        }
         #endregion
 
-        #region Private Methods
+            #region Private Methods
         private void PlaceStart(int x, int y)
         {
             _startPos = new IntPoint(x, y);
