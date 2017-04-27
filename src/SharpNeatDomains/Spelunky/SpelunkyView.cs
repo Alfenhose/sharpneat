@@ -188,6 +188,7 @@ namespace SharpNeat.Domains.Spelunky
             }
 
             //carve the path
+            _world.PrintInfo();
             Thread.Sleep(1000);
             _world.CarveRoute();
             Invoke(new MethodInvoker(delegate ()
@@ -296,14 +297,12 @@ namespace SharpNeat.Domains.Spelunky
                 }
             }
             //start
-            if (false)
             {
                 xg = GridLeft + _world.StartPos._x * visualFieldPixelSize;
                 yg = GridTop + _world.StartPos._y * visualFieldPixelSize;
                 g.FillRectangle(_brushStart, xg + 1, yg + 1, visualFieldPixelSize - 2, visualFieldPixelSize - 2);
             }
             //end
-            if (false)
             {
                 xg = GridLeft + _world.EndPos._x * visualFieldPixelSize;
                 yg = GridTop + _world.EndPos._y * visualFieldPixelSize;

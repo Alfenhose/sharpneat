@@ -601,7 +601,7 @@ The problem domain view allows the performance of the best genome to be observed
       <GridWidth>40</GridWidth>
       <GridHeight>32</GridHeight>
       <InitPercentage>50</InitPercentage>
-      <MooreSize>1</MooreSize>
+      <MooreSize>2</MooreSize>
       <Steps>3</Steps>
       <Description>
         Spelunky 

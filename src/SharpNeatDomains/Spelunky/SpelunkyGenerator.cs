@@ -354,7 +354,10 @@ namespace SharpNeat.Domains.Spelunky
         #endregion
 
         #region Public Methods
-
+        public void PrintInfo()
+        {
+            System.Console.WriteLine($"Percent: {Percentage}%, Solids: {Solids}, Empties: {Empties}, Horizontals: {Horizontals}, Verticals: {Verticals}");
+        }
         /// <summary>
         /// Generates the world
         /// </summary>
@@ -362,10 +365,9 @@ namespace SharpNeat.Domains.Spelunky
         {
             // Init world state.
             Reset();
-            SetUpRooms();
+            //SetUpRooms();
             // make a random world by filling it with noise
             RandomizeWorld(World);
-
             generated = true;
         }
         /// <summary>
@@ -476,45 +478,59 @@ namespace SharpNeat.Domains.Spelunky
                     // when looking at wall
                     if (GetWorldPoint(x, y) == 1)
                     {
+                        _horizontal++;
+                        _vertical++;
                         switch (temp)
                         {
                             case 0:
                                 _loners++;
+                                _horizontal--;
+                                _vertical--;
                                 break;
                             case 1:
                                 _ends++;
+                                _horizontal--;
                                 break;
                             case 2:
                                 _ends++;
+                                _horizontal--;
                                 break;
                             case 3:
-                                _platforms++;
-                                _horizontal++;
+                                _spires++;
+                                _horizontal--;
                                 break;
                             case 4:
                                 _ends++;
-                                break;
-                            case 7:
-                                _vertical++;
+                                _vertical--;
                                 break;
                             case 8:
                                 _ends++;
+                                _vertical--;
+                                break;
+                            case 7:
+                                _horizontal--;
+                                _solids++;
                                 break;
                             case 11:
-                                _vertical++;
+                                _horizontal--;
+                                _solids++;
                                 break;
                             case 12:
-                                _spires++;
-                                _vertical++;
+                                _platforms++;
+                                _vertical--;
                                 break;
                             case 13:
-                                _horizontal++;
+                                _vertical--;
+                                _solids++;
                                 break;
                             case 14:
-                                _horizontal++;
+                                _solids++;
+                                _vertical--;
                                 break;
                             case 15:
                                 _solids++;
+                                _horizontal--;
+                                _vertical--;
                                 break;
                             default:
                                 break;
@@ -529,11 +545,23 @@ namespace SharpNeat.Domains.Spelunky
                             case 0:
                                 _empties++;
                                 break;
+                            case 1:
+                                _empties++;
+                                break;
+                            case 2:
+                                _empties++;
+                                break;
                             case 3:
                                 _pits++;
                                 break;
+                            case 4:
+                                _empties++;
+                                break;
                             case 7:
                                 _nooks++;
+                                break;
+                            case 8:
+                                _empties++;
                                 break;
                             case 11:
                                 _nooks++;
@@ -742,15 +770,48 @@ namespace SharpNeat.Domains.Spelunky
         {
             //First select the starting position
             int startX = _rng.Next(5, _gridWidth - 5);
-            int startY = _rng.Next(4, 6);
-            PlaceStart(startX,startY);
-            //pick any point really as the exit
-            int endX = _rng.Next(0, _gridWidth);
-            int endY = _gridHeight - 1;
-            PlaceEnd(endX,endY);
+            int startY = _rng.Next(1, 5);
             
-            MapKey startKey = new MapKey(startX, startY);
-            MapKey endKey = new MapKey(endX, endY);
+            //pick any point really as the exit
+            int endX = _rng.Next(1, _gridWidth-1);
+            int endY = _rng.Next(_gridHeight - 3, _gridHeight-1);
+            
+
+            //pick five intermediary points
+            int topX = _rng.Next(5, _gridWidth - 5);
+            int topY = _rng.Next(4, 8);
+            int upperX = _rng.Next(5, _gridWidth - 5);
+            int upperY = _rng.Next(_gridHeight/4-3, _gridHeight/4+3);
+            int midX = _rng.Next(5, _gridWidth - 5);
+            int midY = _rng.Next(_gridHeight / 2 - 3, _gridHeight / 2 + 3);
+            int lowerX = _rng.Next(5, _gridWidth - 5);
+            int lowerY = _rng.Next((_gridHeight / 4) * 3 - 3, (_gridHeight / 4) * 3 + 3);
+            int bottomX = _rng.Next(0, _gridWidth);
+            int bottomY = _rng.Next(_gridHeight - 7, _gridHeight - 3);
+
+            //carve the routes
+
+            CarveSubRoute(new IntPoint(startX, startY), new IntPoint(topX, topY));
+            CarveSubRoute(new IntPoint(topX, topY), new IntPoint(upperX, upperY));
+            CarveSubRoute(new IntPoint(upperX, upperY), new IntPoint(midX, midY));
+            CarveSubRoute(new IntPoint(midX, midY), new IntPoint(lowerX, lowerY));
+            CarveSubRoute(new IntPoint(lowerX, lowerY), new IntPoint(bottomX, bottomY));
+            CarveSubRoute(new IntPoint(bottomX, bottomY), new IntPoint(endX, endY));
+            //CarveSubRoute(new IntPoint(startX, startY), new IntPoint(endX, endY));
+
+            PlaceStart(startX, startY);
+            PlaceEnd(endX, endY);
+        }
+
+        /// <summary>
+        /// Carve a route through the level between two points, removing as little dirt as possible
+        /// </summary>
+        public void CarveSubRoute(IntPoint start, IntPoint end)
+        {
+            
+            
+            MapKey startKey = new MapKey(start._x, start._y);
+            MapKey endKey = new MapKey(end._x, end._y);
 
             //Now start the search
 
@@ -768,13 +829,10 @@ namespace SharpNeat.Domains.Spelunky
             openQueue.Add(startnode);
             openSet.Add(startKey);
             DateTime tiem = DateTime.Now;
-            //int check = 0;
 
             while (!openQueue.IsEmpty)
             {
-                //check++;
                 BFSNode current = openQueue.DeleteMin();
-                //System.Console.Out.WriteLine($"check no. {check}... node with pos: [{current.X},{current.Y}] and score: {current.FScore}");
                 if (current.Pos.Equals(endKey))
                 {
                     endnode = current;
@@ -789,7 +847,7 @@ namespace SharpNeat.Domains.Spelunky
                 if (current.X < GridWidth - 1) neighbours.Add(new MapKey(current.X + 1, current.Y));
                 if (current.Y > 0) neighbours.Add(new MapKey(current.X, current.Y - 1));
                 if (current.Y < GridHeight - 1) neighbours.Add(new MapKey(current.X, current.Y + 1));
-                //
+
                 foreach (MapKey neighbour in neighbours)
                 {
                     BFSNode neighbourNode = new BFSNode(neighbour);
@@ -801,7 +859,7 @@ namespace SharpNeat.Domains.Spelunky
                     bool up = neighbour.Y < current.Y;
                     bool down = neighbour.Y > current.Y;
                     bool wall = GetWorldPoint(neighbour.X, neighbour.Y) == 1;
-                    double cost = (wall ? down ? 500 : up ? 50 : 200 : down ? 1 : up ? 1 : 1);
+                    double cost = (wall ? down ? 1000 : up ? 75 : 125 : down ? 1 : up ? 1 : 1);
 
                     double tenativeScore = current.GScore + 1 + cost;
 
@@ -824,10 +882,31 @@ namespace SharpNeat.Domains.Spelunky
                 {
                     carved++;
                 }
+                if (carveNode.Y > 2)
+                {
+                    if (_rng.Next(2) == 0)
+                    {
+                        _world[carveNode.X, carveNode.Y - 1] = 0;
+                        if (_rng.Next(3) == 0)
+                        {
+                            _world[carveNode.X, carveNode.Y - 2] = 0;
+                        }
+                    }
+                    
+                }
+                if (carveNode.X > 1)
+                {
+                    if (_rng.Next(4) != 0)
+                        _world[carveNode.X - 1, carveNode.Y] = 0;
+                }
+                if (carveNode.X < _gridWidth - 1)
+                {
+                    if (_rng.Next(4) != 0)
+                        _world[carveNode.X + 1, carveNode.Y] = 0;
+                }
                 _world[carveNode.X, carveNode.Y] = 0;
                 carveNode = carveNode.Previous;
             }
-            System.Console.Out.WriteLine($"Finished carving the route in {check} checks.\nThe length was {length} and {carved} nodes where removed");
         }
         /// <summary>
         /// Check if a level is completeable
@@ -903,24 +982,42 @@ namespace SharpNeat.Domains.Spelunky
             return false;
         }
         #endregion
-
-            #region Private Methods
+        /// <summary>
+        /// Reset the generator
+        /// </summary>
+        public void Reset()
+        {
+            World = null;
+            percentage = -1;
+            IntegralWorld = null;
+            stats = false;
+            _loners = 0;
+            _nooks = 0;
+            _solids = 0;
+            _spires = 0;
+            _pits = 0;
+            _holes = 0;
+            _platforms = 0;
+            _tunnels = 0;
+            _vertical = 0;
+            _horizontal = 0;
+            _ends = 0;
+            _empties = 0;
+        }
+        #region Private Methods
         private void PlaceStart(int x, int y)
         {
             _startPos = new IntPoint(x, y);
-            _world[x - 1, y - 1] = 0;
-            _world[x, y - 1] = 0;
-            _world[x + 1, y - 1] = 0;
-            _world[x - 1, y] = 0;
-            _world[x, y] = 0;
-            _world[x + 1, y] = 0;
-            _world[x - 1, y + 1] = 1;
+            //_world[x - 1, y + 1] = 1;
             _world[x, y + 1] = 1;
-            _world[x + 1, y + 1] = 1;
+            //_world[x + 1, y + 1] = 1;
         }
         private void PlaceEnd(int x, int y)
         {
             _endPos = new IntPoint(x, y);
+            //_world[x - 1, y + 1] = 1;
+            _world[x, y + 1] = 1;
+            //_world[x + 1, y + 1] = 1;
         }
 
         /// <summary>
@@ -993,16 +1090,7 @@ namespace SharpNeat.Domains.Spelunky
             return integral;
         }
 
-        /// <summary>
-        /// Reset the generator
-        /// </summary>
-        private void Reset()
-        {
-            World = null;
-            percentage = -1;
-            IntegralWorld = null;
-            _loners = -1;
-        }
+        
         #endregion
     }
     /// <summary>

@@ -2,11 +2,11 @@
 |  SPELUNKY EXTENDED STATS  |
 +---------------------------+
 
-CRATES OPENED:      12
+CRATES OPENED:      16
 CHESTS OPENED:      4
 
-IDOLS GRABBED:      72
-IDOLS CONVERTED:    9
+IDOLS GRABBED:      74
+IDOLS CONVERTED:    11
 
 DAMSELS GRABBED:    632
 KISSES BOUGHT:      0
@@ -23,11 +23,11 @@ DICE GAMES LOST:    0
 
 LEVEL        DEATHS
 ------------+------------
- 1          | 351
- 2          | 18
- 3          | 7
- 4          | 9
- 5          | 7
+ 1          | 352
+ 2          | 19
+ 3          | 10
+ 4          | 10
+ 5          | 8
  6          | 4
  7          | 1
  8          | 1
@@ -40,12 +40,12 @@ LEVEL        DEATHS
  15         | 1
  16         | 4
 ------------+------------
- TOTAL      | 422
+ TOTAL      | 429
 
 ENEMY        DEATHS
 ------------+------------
  ???        | 0
- SNAKE      | 6
+ SNAKE      | 7
  SPIDER     | 8
  ???        | 0
  CAVEMAN    | 1
@@ -54,7 +54,7 @@ ENEMY        DEATHS
  ???        | 0
  FROG       | 3
  FIRE FROG  | 1
- MANTRAP    | 3
+ MANTRAP    | 4
  PIRANHA    | 1
  ???        | 0
  ???        | 0
@@ -75,9 +75,9 @@ MISC         DEATHS
  ???        | 0
  CRUSHED    | 44
  LONG FALL  | 34
- SPIKES     | 32
+ SPIKES     | 35
  ???        | 0
- ARROW TRAP | 31
+ ARROW TRAP | 32
  SPEAR TRAP | 2
  SMASH TRAP | 3
  ???        | 0
@@ -86,12 +86,12 @@ MISC         DEATHS
 
 ENEMY        KILLS
 ------------+------------
- BAT        | 95
- SNAKE      | 228
- SPIDER     | 64
+ BAT        | 100
+ SNAKE      | 247
+ SPIDER     | 73
  G. SPIDER  | 2
- CAVEMAN    | 4
- SKELETON   | 17
+ CAVEMAN    | 5
+ SKELETON   | 18
  ZOMBIE     | 7
  ???        | 0
  FROG       | 16
@@ -110,4 +110,4 @@ ENEMY        KILLS
  ???        | 0
  OLMEC      | 1
 ------------+------------
- TOTAL      | 503
+ TOTAL      | 538

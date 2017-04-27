@@ -88,23 +88,26 @@ namespace SharpNeat.Domains.Spelunky
                 {
                     generator.ShapeTheWorld(box);
                 }
-                /*for (int t = 0; t < 2; t++)
-                {
-                    generator.CalculateRooms();
-                }
-                generator.RemoveRooms();*/
-                if (!NotFullOrEmpty(generator))
+                
+                if (FullOrEmpty(generator))
                 {
                     continue;
                 }
-                fitness += 1 * weight * TotalAverage(generator);
                 
-                fitness += 1 * weight * FullOrEmptyRowsOrColumns(generator);
-
-                //fitness += 1 * weight * Consistency(generator);
-                //fitness += 1 * RowsAndColumns(generator);
+                fitness += 2 * weight * FullOrEmptyRowsOrColumns(generator);
+                fitness += 3 * weight * TotalAverage(generator);
+                fitness += 2 * weight * Consistency(generator);
+                fitness += 3 * weight * RowsAndColumns(generator);
                 fitness += 1 * weight * HorizontalORVertical(generator);
+                fitness += 1 * weight * LonersAndHoles(generator);
+
                 //fitness += 5 * Rooms(generator);
+
+                /*for (int t = 0; t < 2; t++)
+                    {
+                        generator.CalculateRooms();
+                    }
+                    generator.RemoveRooms();*/
 
             }
             // Track number of evaluations and test stop condition.
@@ -123,7 +126,7 @@ namespace SharpNeat.Domains.Spelunky
             //each row (avoid half empty rows)
             {
                 double target = 0.5;
-                double weight = 10;
+                double weight = 0.25;
                 double rowPercent = (generator.IntegralWorld[_gridWidth - 1, 0]) / (double)(_gridWidth);
                 fitness += weight * SqrDeviationFromTarget(target, rowPercent) / (double)(_gridHeight);
                 for (int y = 1; y < _gridHeight; y++)
@@ -134,7 +137,7 @@ namespace SharpNeat.Domains.Spelunky
                 }
             }
             //for every five rows there should be about 10% walls
-            {
+            /*{
                 double target = 0.2;
                 double weight = 20;
                 int height = 5;
@@ -146,12 +149,12 @@ namespace SharpNeat.Domains.Spelunky
                                 - generator.IntegralWorld[_gridWidth - 1, y - 1]) / (double)(_gridWidth * height);
                     fitness += weight * SqrProximityToTarget(target, rowPercent) / (double)(_gridHeight - height + 1);
                 }
-            }
+            }*/
 
             //each column (avoid empty columns and full columns)
             {
                 double target = 0.5;
-                double weight = 15;
+                double weight = 0.25;
                 double columnPercent = (generator.IntegralWorld[0, _gridHeight - 1]) / (_gridHeight * 1.0);
                 fitness += weight * SqrProximityToTarget(target, columnPercent) / _gridWidth;
                 for (int x = 1; x < _gridWidth; x++)
@@ -163,7 +166,7 @@ namespace SharpNeat.Domains.Spelunky
             }
             //The outermost columns (lets say 5) should have about the same density
             {
-                double weight = 15;
+                double weight = 0.25;
                 int columns = 5;
 
                 double density1 = generator.IntegralWorld[columns - 1, _gridHeight - 1] / (double)(_gridHeight * columns);
@@ -173,7 +176,7 @@ namespace SharpNeat.Domains.Spelunky
             }
             //The top- and bottommost rows (lets say 5) should have about the same density
             {
-                double weight = 15;
+                double weight = 0.25;
                 int rows = 5;
 
                 double density1 = generator.IntegralWorld[_gridWidth - 1, rows - 1] / (double)(_gridWidth * rows);
@@ -185,15 +188,15 @@ namespace SharpNeat.Domains.Spelunky
             return fitness;
         }
 
-        private bool NotFullOrEmpty(SpelunkyGenerator generator)
+        private bool FullOrEmpty(SpelunkyGenerator generator)
         {
             //not full or empty
             {
                 int value = generator.IntegralWorld[_gridWidth - 1, _gridHeight - 1];
                 if (value > 0 && value < _gridWidth * _gridHeight)
-                    return true;
+                    return false;
             }
-            return false;
+            return true;
         }
         private double FullOrEmptyRowsOrColumns(SpelunkyGenerator generator)
         {
@@ -242,19 +245,27 @@ namespace SharpNeat.Domains.Spelunky
             fitness += weight * BlockProximity(51, generator.Ends);
             return fitness;
         }
+        private double LonersAndHoles(SpelunkyGenerator generator)
+        {
+            double fitness = 0;
+            double weight = 0.5;
+            fitness += weight * BlockProximity(10, generator.Loners);
+            fitness += weight * BlockProximity(10, generator.Holes);
+            return fitness;
+        }
         private double Consistency(SpelunkyGenerator generator)
         {
             double fitness = 0;
             double weight = 0.5;
-            //fitness += weight * 1 * BlockProximity(120, generator.Solids);
-            //fitness += weight * 1 * BlockProximity(240, generator.Empties);
+            fitness += weight * 1 * BlockProximity(128, generator.Solids);
+            fitness += weight * 1 * BlockProximity(64, generator.Empties);
 
-            double clamp = Math.Max(generator.Solids, generator.Empties);
+            /*double clamp = Math.Max(generator.Solids, generator.Empties);
             if (clamp > 0)
             {
                 fitness += weight * 1 * (generator.Solids / clamp);
                 fitness += weight * 1 * (generator.Empties / clamp);
-            }
+            }*/
             return fitness;
         }
         private double HorizontalORVertical(SpelunkyGenerator generator)
@@ -262,12 +273,15 @@ namespace SharpNeat.Domains.Spelunky
             double fitness = 0;
             double weight = 0.5;
 
-            double clamp = Math.Max(generator.Horizontals, generator.Verticals);
+            fitness += weight * 1 * BlockProximity(400, generator.Verticals);
+            fitness += weight * 1 * BlockProximity(800, generator.Horizontals);
+
+            /*double clamp = Math.Max(generator.Horizontals, generator.Verticals*2);
             if (clamp > 0)
             {
                 fitness += weight * 1 * (generator.Horizontals / clamp);
                 fitness += weight * 1 * (generator.Verticals / clamp);
-            }
+            }*/
             return fitness;
         }
 
@@ -293,9 +307,9 @@ namespace SharpNeat.Domains.Spelunky
         {
             double fitness = 0;
             {
-                double target = 0.50;
+                double target = 0.66;
                 double weight = 1;
-                fitness += weight * SqrProximityToTarget(target, generator.Percentage);
+                fitness += weight * SqrProximityToTarget(target, generator.Percentage/100);
             }
             return fitness;
         }
@@ -304,7 +318,7 @@ namespace SharpNeat.Domains.Spelunky
         /// Reset the internal state of the evaluation scheme if any exists.
         /// </summary>
         public void Reset()
-        {   
+        {
         }
         /// <summary>
         /// Returns the absolute inverted distance from target value to deviant value
@@ -318,7 +332,7 @@ namespace SharpNeat.Domains.Spelunky
         /// </summary>
         private double SqrProximityToTarget(double target, double deviant)
         {
-            return Math.Pow(ProximityToTarget(target, deviant), 2);
+            return 1 - Math.Pow(DeviationFromTarget(target, deviant), 2);
         }
 
         /// <summary>
