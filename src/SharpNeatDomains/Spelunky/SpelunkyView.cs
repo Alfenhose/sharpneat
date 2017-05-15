@@ -163,7 +163,7 @@ namespace SharpNeat.Domains.Spelunky
                 PaintView();
             }));
 
-            Thread.Sleep(1000);
+            Thread.Sleep(20000);
 
             // Clear any prior agent state.
             agent.ResetState();
@@ -181,7 +181,7 @@ namespace SharpNeat.Domains.Spelunky
                     }));
 
                 // Sleep. Even if the sim is about to exit - that way we see the end result for a moment.
-                Thread.Sleep(100);
+                Thread.Sleep(20000);
                 if(exit) {
                     break;
                 }
@@ -189,13 +189,12 @@ namespace SharpNeat.Domains.Spelunky
 
             //carve the path
             _world.PrintInfo();
-            Thread.Sleep(1000);
             _world.CarveRoute();
             Invoke(new MethodInvoker(delegate ()
             {
                 PaintView();
             }));
-            Thread.Sleep(1000);
+            Thread.Sleep(20000);
             /*for (int i = 0; i < 2; i++)
             {
                 Thread.Sleep(500);
