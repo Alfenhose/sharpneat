@@ -195,37 +195,11 @@ namespace SharpNeat.Domains.Spelunky
                 PaintView();
             }));
             Thread.Sleep(20000);
-            /*for (int i = 0; i < 2; i++)
-            {
-                Thread.Sleep(500);
-                _world.CalculateRooms();
-                _world.RecalculateRooms();
-                Invoke(new MethodInvoker(delegate ()
-                {
-                    PaintView();
-                }));
-            }
-            _world.RecalculateRooms();
-            _world.CalculateConnections();
-            Invoke(new MethodInvoker(delegate ()
-            {
-                PaintView();
-            }));*/
             string path = Environment.CurrentDirectory + "\\generated.lvl";
             StreamWriter fileOut = new StreamWriter(path);
             Save(agent, fileOut);
             fileOut.Close();
-            /*
-            SaveFileDialog dialog = new SaveFileDialog();
-            dialog.DefaultExt = ".lvl";
-            dialog.FileName = "generated.lvl";
-            dialog.Title = "Save generated Level";
-            DialogResult result = dialog.ShowDialog();
-            if (result == DialogResult.OK)
-            {
-                Save(agent, dialog.OpenFile());
-            }
-            */
+           
             Thread.Sleep(2000);
         }
 

@@ -100,15 +100,6 @@ namespace SharpNeat.Domains.Spelunky
                 fitness += 3 * weight * RowsAndColumns(generator);
                 fitness += 1 * weight * HorizontalORVertical(generator);
                 fitness += 1 * weight * LonersAndHoles(generator);
-
-                //fitness += 5 * Rooms(generator);
-
-                /*for (int t = 0; t < 2; t++)
-                    {
-                        generator.CalculateRooms();
-                    }
-                    generator.RemoveRooms();*/
-
             }
             // Track number of evaluations and test stop condition.
             _evalCount++;
@@ -259,13 +250,7 @@ namespace SharpNeat.Domains.Spelunky
             double weight = 0.5;
             fitness += weight * 1 * BlockProximity(128, generator.Solids);
             fitness += weight * 1 * BlockProximity(64, generator.Empties);
-
-            /*double clamp = Math.Max(generator.Solids, generator.Empties);
-            if (clamp > 0)
-            {
-                fitness += weight * 1 * (generator.Solids / clamp);
-                fitness += weight * 1 * (generator.Empties / clamp);
-            }*/
+            
             return fitness;
         }
         private double HorizontalORVertical(SpelunkyGenerator generator)
@@ -275,13 +260,7 @@ namespace SharpNeat.Domains.Spelunky
 
             fitness += weight * 1 * BlockProximity(400, generator.Verticals);
             fitness += weight * 1 * BlockProximity(800, generator.Horizontals);
-
-            /*double clamp = Math.Max(generator.Horizontals, generator.Verticals*2);
-            if (clamp > 0)
-            {
-                fitness += weight * 1 * (generator.Horizontals / clamp);
-                fitness += weight * 1 * (generator.Verticals / clamp);
-            }*/
+           
             return fitness;
         }
 
